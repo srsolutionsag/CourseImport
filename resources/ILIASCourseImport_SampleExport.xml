@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ns1:courses xmlns:ns1="http://www.studer-raimann.ch/CourseImport">
+	<ns1:course>
+		<ns1:refId>512</ns1:refId>
+		<ns1:title>Mathematik 1</ns1:title>
+		<ns1:hierarchy>123</ns1:hierarchy>
+		<ns1:references>235,444,479</ns1:references>
+		<ns1:courseAdmins>a.einstein</ns1:courseAdmins>
+		<ns1:directRegistration>true</ns1:directRegistration>
+		<ns1:courseTimeframe/>
+		<ns1:courseInscriptionTimeframe>
+			<ns1:courseInscriptionBeginningDate>2016-10-09</ns1:courseInscriptionBeginningDate>
+			<ns1:courseInscriptionBeginningTime>00:00:00.000</ns1:courseInscriptionBeginningTime>
+			<ns1:courseInscriptionEndDate>2016-12-31</ns1:courseInscriptionEndDate>
+			<ns1:courseInscriptionEndTime>23:59:59.000</ns1:courseInscriptionEndTime>
+		</ns1:courseInscriptionTimeframe>
+	</ns1:course>
+	<ns1:course>
+		<ns1:title>Mathematik 2</ns1:title>
+		<ns1:description>Einführung in die Boolesche Algebra</ns1:description>
+		<ns1:hierarchy>123</ns1:hierarchy>
+		<ns1:courseAdmins>t.edison,n.tesla,p.vonsamos</ns1:courseAdmins>
+		<ns1:online>false</ns1:online>
+		<ns1:welcomeMail>true</ns1:welcomeMail>
+		<ns1:courseTimeframe>
+			<ns1:courseBeginningDate>2016-10-10</ns1:courseBeginningDate>
+			<ns1:courseBeginningTime>10:30:00.000</ns1:courseBeginningTime>
+			<ns1:courseEndDate>2016-10-10</ns1:courseEndDate>
+			<ns1:courseEndTime>12:00:00.000</ns1:courseEndTime>
+		</ns1:courseTimeframe>
+		<ns1:courseInscriptionTimeframe/>
+	</ns1:course>
+</ns1:courses>

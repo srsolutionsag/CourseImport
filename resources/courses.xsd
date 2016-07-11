@@ -1,16 +1,100 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
-targetNamespace="http://www.w3schools.com"
-xmlns="http://www.w3schools.com"
+targetNamespace="http://www.studer-raimann.ch/CourseImport"
+xmlns:ci="http://www.studer-raimann.ch/CourseImport"
 elementFormDefault="qualified">
 
-<xs:element name="note">
+<xs:annotation>
+    <xs:documentation>
+      This XML schema is a model for creating XML files cointaing data for ILIAS Courses.
+      If theese derived XML files are valid, they can be imported by the studer + raimann ag's CourseImport-Plugin for ILIAS [https://git.studer-raimann.ch/plugins/CourseImport]
+    </xs:documentation>
+</xs:annotation>
+
+<xs:element name="courses">
   <xs:complexType>
     <xs:sequence>
-      <xs:element name="to" type="xs:string"/>
-      <xs:element name="from" type="xs:string"/>
-      <xs:element name="heading" type="xs:string"/>
-      <xs:element name="body" type="xs:string"/>
+      <xs:element name="course" minOccurs="0" maxOccurs="unbounded">
+        <xs:complexType>
+          <xs:sequence>
+            <!-- the course ref-id. If given, change the existing course, if not given, create a new one -->
+            <xs:element name="refId" type="xs:positiveInteger" minOccurs="0" maxOccurs="1"/>
+
+            <!-- the course title -->
+            <xs:element name="title" minOccurs="1" maxOccurs="1">
+              <xs:simpleType>
+                <xs:restriction base="xs:string">
+                  <xs:minLength value="2"></xs:minLength>
+                  <xs:maxLength value="255"></xs:maxLength>
+                </xs:restriction>
+              </xs:simpleType>
+            </xs:element>
+
+            <!-- the course description -->
+            <xs:element name="description" type="xs:string" minOccurs="0" maxOccurs="1"/>
+
+            <!-- describes where the course should be stored in (e.g. a ref-id of a category) -->
+            <xs:element name="hierarchy" type="xs:positiveInteger" minOccurs="1" maxOccurs="1"/>
+
+            <!-- describes where there should be placed references to the course (e.g. a ref-id of a category) -->
+            <!-- multiple values allowed, seperated by comma -->
+            <xs:element name="references" minOccurs="0" maxOccurs="1">
+              <xs:simpleType>
+                <xs:restriction base="xs:string">
+                  <xs:pattern value="[\d,]*"/>
+                </xs:restriction>
+              </xs:simpleType>
+            </xs:element>
+
+            <!-- ilias user name(s) of the user(s) that should be set as course-administrator. Multiple values must be comma seperated. The first user is also set as cours owner -->
+            <xs:element name="courseAdmins" type="xs:string" minOccurs="1" maxOccurs="1"/>
+
+            <!-- boolean whether course is online or not => allowed values: true | false -->
+            <xs:element name="online" type="xs:boolean" default="false" minOccurs="0" maxOccurs="1"/>
+
+            <!-- boolean whether direct registration is possible or not => allowed values: true | false -->
+            <xs:element name="directRegistration" type="xs:boolean" default="false" minOccurs="0" maxOccurs="1"/>
+
+            <!-- boolean whether direct welcome mail is activated or not => allowed values: true | false -->
+            <xs:element name="welcomeMail" type="xs:boolean" default="false" minOccurs="0" maxOccurs="1"/>
+
+            <!-- Date and time when the course begins -->
+            <xs:element name="courseTimeframe" minOccurs="0" maxOccurs="1">
+              <xs:complexType>
+                <xs:sequence>
+                  <!-- The day when the course begins | Format: YYYY-MM-DD | Example: 2002-09-24 -->
+                  <xs:element name="courseBeginningDate" type="xs:date" minOccurs="0" maxOccurs="1"/>
+                  <!-- The time when the course begins | Format: hh:mm:ss | Example: 09:30:00 -->
+                  <xs:element name="courseBeginningTime" type="xs:time" minOccurs="0" maxOccurs="1"/>
+                  <xs:element name="courseBeginningTime" type="xs:time" minOccurs="0" maxOccurs="1"/>
+
+                  <!-- The day when the course ends | Format: YYYY-MM-DD | Example: 2002-09-24 -->
+                  <xs:element name="courseEndDate" type="xs:date" minOccurs="0" maxOccurs="1"/>
+                  <!-- The time when the course ends | Format: hh:mm:ss | Example: 11:30:00 -->
+                  <xs:element name="courseEndTime" type="xs:time" minOccurs="0" maxOccurs="1"/>
+                </xs:sequence>
+              </xs:complexType>
+            </xs:element>
+
+            <!-- Date and time when possibility for inscription to course begins -->
+            <xs:element name="courseInscriptionTimeframe" minOccurs="0" maxOccurs="1">
+              <xs:complexType>
+                <xs:sequence>
+                  <!-- The day when possibility for inscription to course begins | Format: YYYY-MM-DD | Example: 2002-09-24 -->
+                  <xs:element name="courseInscriptionBeginningDate" type="xs:date" minOccurs="0" maxOccurs="1"/>
+                  <!-- The time when possibility for inscription to course begins | Format: hh:mm:ss | Example: 09:30:00 -->
+                  <xs:element name="courseInscriptionBeginningTime" type="xs:time" minOccurs="0" maxOccurs="1"/>
+                  <!-- The day when possibility for inscription to course ends | Format: YYYY-MM-DD | Example: 2002-09-24 -->
+                  <xs:element name="courseInscriptionEndDate" type="xs:date" minOccurs="0" maxOccurs="1"/>
+                  <!-- The time when possibility for inscription to course ends | Format: hh:mm:ss | Example: 11:30:00 -->
+                  <xs:element name="courseInscriptionEndTime" type="xs:time" minOccurs="0" maxOccurs="1"/>
+                </xs:sequence>
+              </xs:complexType>
+            </xs:element>
+
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
     </xs:sequence>
   </xs:complexType>
 </xs:element>

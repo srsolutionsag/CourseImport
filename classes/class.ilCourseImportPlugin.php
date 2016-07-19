@@ -7,25 +7,25 @@ include_once("./Services/UIComponent/classes/class.ilUserInterfaceHookPlugin.php
  */
 class ilCourseImportPlugin extends ilUserInterfaceHookPlugin
 {
-    /**
-     * @var ilCourseImportPlugin
-     */
-    protected static $instance;
+	/**
+	 * @var ilCourseImportPlugin
+	 */
+	protected static $instance;
 
-    /**
-     * @return ilCourseImportPlugin
-     */
-    public static function getInstance() {
-        if(is_null(self::$instance)) {
-            self::$instance = new self();
-        }
-        
-        return self::$instance;
-    }
-    
-    function getPluginName()
-    {
-        return "CourseImport";
-    }
+	/**
+	 * @return ilCourseImportPlugin
+	 */
+	public static function getInstance() {
+		if(is_null(self::$instance)) {
+			self::$instance = new self();
+		}
+
+		return self::$instance;
+	}
+
+	function getPluginName()
+	{
+		return "CourseImport";
+	}
 
 }

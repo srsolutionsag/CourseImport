@@ -1,0 +1,13 @@
+tab_course_import#:#XML Course Import
+back#:#Back
+form_title#:#XML Course Import
+file_input#:#Upload XML file
+import_courses#:#Import Courses
+error_admin#:#Admin(s) not found:
+error_ref_id#:#Ref-ID not found:
+error_obj_type#:#Wrong Object type of Ref-ID:
+error_parent#:#Parent Ref-ID (hierarchy) not found:
+error_parent_ref#:#Parent Ref-ID (references) not found:
+error_timeframe#:#Activation Timeframe is incomplete for course:
+error_inscription#:#Inscription Timeframe is incomplete for course:
+import_succeeded#:#Courses created:<br>%s<br>Courses updated:<br>%s

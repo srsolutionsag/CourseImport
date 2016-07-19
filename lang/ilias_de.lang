@@ -1,0 +1,13 @@
+tab_course_import#:#XML Kurs-Import
+back#:#Zurück
+form_title#:#XML Kurs-Import
+file_input#:#XML Datei Hochladen
+import_courses#:#Kurse Importieren
+error_admin#:#Admin(s) nicht gefunden:
+error_ref_id#:#Ref-ID nicht gefunden:
+error_obj_type#:#Falscher Objekttyp der Ref-ID:
+error_parent#:#Parent Ref-ID nicht gefunden:
+error_parent_ref#:#Parent Ref-ID (references) not found:
+error_timeframe#:#Aktivierungszeitfenster unvollständig bei Kurs:
+error_inscription#:#Anmeldungszeitfenster unvollständig bei Kurs:
+import_succeeded#:#Kurse neu angelegt:<br>%s<br>Kurse aktualisiert:<br>%s

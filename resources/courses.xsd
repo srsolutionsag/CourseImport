@@ -66,9 +66,8 @@ elementFormDefault="qualified">
                   <xs:element name="courseBeginningDate" type="xs:date" minOccurs="0" maxOccurs="1"/>
                   <!-- The time when the course begins | Format: hh:mm:ss | Example: 09:30:00 -->
                   <xs:element name="courseBeginningTime" type="xs:time" minOccurs="0" maxOccurs="1"/>
-                  <xs:element name="courseBeginningTime" type="xs:time" minOccurs="0" maxOccurs="1"/>
 
-                  <!-- The day when the course ends | Format: YYYY-MM-DD | Example: 2002-09-24 -->
+                  <!-- The day when the course ends | Format: YYY Y-MM-DD | Example: 2002-09-24 -->
                   <xs:element name="courseEndDate" type="xs:date" minOccurs="0" maxOccurs="1"/>
                   <!-- The time when the course ends | Format: hh:mm:ss | Example: 11:30:00 -->
                   <xs:element name="courseEndTime" type="xs:time" minOccurs="0" maxOccurs="1"/>

@@ -18,6 +18,7 @@ class ilCourseImportGUI
 
 	const XML_PREFIX = 'ns1';
 	const IMPORT_SUCCEEDED = 'import_succeeded';
+	const IMPORT_FAILED = 'import_failed';
 
 
 	/**
@@ -73,7 +74,7 @@ class ilCourseImportGUI
 	 *
 	 */
 	public function executeCommand() {
-		//$this->checkAccess();
+		$this->checkAccess();
 		$cmd = $this->ctrl->getCmd('view');
 		$this->ctrl->saveParameter($this, 'ref_id');
 		$this->prepareOutput();
@@ -164,7 +165,7 @@ class ilCourseImportGUI
 			$validator = new ilCourseImportValidator($xml_file);
 			$validator->validate();
 			if ($last_error = $validator->getLastError()) {
-				ilUtil::sendFailure($last_error, true);
+				ilUtil::sendFailure($this->pl->txt(self::IMPORT_FAILED) . $last_error, true);
 				$this->ctrl->redirect($this, 'view');
 			}
 
@@ -192,16 +193,27 @@ class ilCourseImportGUI
 
 			//online
 			if (isset($item->online)) {
-				$course->setOfflineStatus(!(bool) $item->online);
+				if ($item->online == 'false') {
+					$course->setOfflineStatus(true);
+				} elseif ($item->online == 'true') {
+					$course->setOfflineStatus(false);
+				}
 			}
 
 			//direct registration
-			if ($reg = (bool) $item->directRegistration) {
+			if($item->directRegistration == "true"){
 				$course->setSubscriptionType(IL_CRS_SUBSCRIPTION_DIRECT);
+			} elseif ($item->directRegistration == "false") {
+				$course->setSubscriptionType(IL_CRS_SUBSCRIPTION_DEACTIVATED);
 			}
+
 			//welcome mail
 			if (isset($item->welcomeMail)) {
-				$course->setAutoNotification((bool) $item->welcomeMail);
+				if ($item->welcomeMail == 'false') {
+					$course->setAutoNotification(false);
+				} elseif ($item->welcomeMail == 'true') {
+					$course->setAutoNotification(true);
+				}
 			}
 
 
@@ -222,7 +234,7 @@ class ilCourseImportGUI
 						IL_CAL_DATETIME);
 					$course->setSubscriptionEnd($end->getUnixTime());
 				} else {
-
+					$course->setSubscriptionLimitationType(ilCourseConstants::SUBSCRIPTION_UNLIMITED);
 				}
 			}
 
@@ -248,32 +260,47 @@ class ilCourseImportGUI
 
 			//course time range:  if there's no timeframe defined, leave the current/default timeframe,
 			//if it is defined but empty, unset the timeframe
-			if (!empty($item->courseTimeframe)) {
-				$courseTimeframe = $item->courseTimeframe;
-				$start = new ilDate(
-					$courseTimeframe->courseBeginningDate->__toString(),
-					IL_CAL_DATE);
-				$course->setCourseStart($start);
-				$end = new ilDate(
-					$courseTimeframe->courseEndDate->__toString(),
-					IL_CAL_DATE);
-				$course->setCourseEnd($end);
-				$course->update();
+			if ($item->courseTimeframe) {
+				if (!empty($item->courseTimeframe)) {
+					$course->setActivationType(IL_CRS_ACTIVATION_LIMITED);
+					$courseTimeframe = $item->courseTimeframe;
+					$start = new ilDate(
+						$courseTimeframe->courseBeginningDate->__toString(),
+						IL_CAL_DATE);
+					$course->setCourseStart($start);
+					$end = new ilDate(
+						$courseTimeframe->courseEndDate->__toString(),
+						IL_CAL_DATE);
+					$course->setCourseEnd($end);
+					$course->update();
+				} else {
+					$course->setActivationType(IL_CRS_ACTIVATION_UNLIMITED);
+					$course->setCourseStart(null);
+					$course->setCourseEnd(null);
+					$course->update();
+				}
 			}
 
-			//add course admins
+
+			//set course admins
 			$participants = ilCourseParticipants::_getInstanceByObjId($course->getId());
-			if($existing_admins = $participants->getAdmins()) {
-				//import has higher priority, so delete existing admins first
-				/** @var ilCourseParticipants $participants */
-				$participants->deleteParticipants($existing_admins);
+			$admins = $item->courseAdmins->__toString() ? explode(',', $item->courseAdmins->__toString()) : array();
+			$admin_ids = array();
+			foreach ($admins as $a) {
+				$admin_ids[] = ilObjUser::_lookupId($a);
 			}
-			$admins = explode(',', $item->courseAdmins->__toString());
+			$existing_admins = $participants->getAdmins();
+
+			foreach (array_diff($admin_ids, $existing_admins) as $add) {
+				$participants->add($add, IL_CRS_ADMIN);
+			}
+			foreach (array_diff($existing_admins, $admin_ids) as $rm) {
+				$participants->delete($rm);
+			}
+
+
 			$course->setOwner(ilObjUser::_lookupId($admins[0]));
 			$course->updateOwner();
-			foreach ($admins as $admin) {
-				$participants->add(ilObjUser::_lookupId($admin), IL_CRS_ADMIN);
-			}
 
 			//create references
 			if ($item->references) {
@@ -291,6 +318,14 @@ class ilCourseImportGUI
 				}
 			}
 
+		}
+	}
+
+	protected function checkAccess() {
+		global $ilAccess, $ilErr;
+		if(!$ilAccess->checkAccess("read", "", $_GET['ref_id']))
+		{
+			$ilErr->raiseError($this->lng->txt("no_permission"), $ilErr->WARNING);
 		}
 	}
 

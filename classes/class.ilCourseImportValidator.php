@@ -11,6 +11,8 @@ class ilCourseImportValidator {
 	const XSD_FILEPATH = './Customizing/global/plugins/Services/UIComponent/UserInterfaceHook/CourseImport/resources/courses.xsd';
 	const XML_PREFIX = 'ns1';
 
+	const ERROR_XSD_VALIDATION = 'error_xsd';
+	const ERROR_ILIAS_VALIDATION = 'error_ilias';
 	const ERROR_ADMIN_NOT_FOUND = 'error_admin';
 	const ERROR_REF_ID_NOT_FOUND = 'error_ref_id';
 	const ERROR_WRONG_OBJECT_TYPE = 'error_obj_type';
@@ -59,7 +61,6 @@ class ilCourseImportValidator {
 		$this->objDefinition = $objDefinition;
 
 		$this->xml_file = $xml_file;
-		//		$this->courses = array('new' => '', 'updated' => '', 'refs' => '');
 	}
 
 
@@ -75,13 +76,13 @@ class ilCourseImportValidator {
 		$xml = new DOMDocument();
 		$xml->load($this->xml_file);
 		if (! $xml->schemaValidate(self::XSD_FILEPATH)) {
-			$this->last_error .= $this->pl->txt('error_xsd_validation') . '<br>' .
-				libxml_get_last_error()->message . '<br>' .
-				libxml_get_last_error()->level . '<br>' .
-				libxml_get_last_error()->line . '<br>';
+			$this->last_error .= sprintf($this->pl->txt(self::ERROR_XSD_VALIDATION),
+				libxml_get_last_error()->message,
+				libxml_get_last_error()->line);
+			$this->last_error .= $this->pl->txt(self::ERROR_ILIAS_VALIDATION);
 		}
 
-		$this->validateIliasSpecific($this->xml_file);
+		$this->validateIliasSpecific();
 
 	}
 
@@ -92,34 +93,36 @@ class ilCourseImportValidator {
 	 *
 	 * @internal param String $xml
 	 */
-	public function validateIliasSpecific() {
+	protected function validateIliasSpecific() {
 		$data = simplexml_load_file($this->xml_file);
 		foreach ($data->children(self::XML_PREFIX, true) as $item) {
 			//admin login exists in ilias
-			foreach (explode(',', $item->courseAdmins->__toString()) as $admin) {
-				if (!ilObjUser::_loginExists($admin)) {
-					$this->last_error .= $this->pl->txt(self::ERROR_ADMIN_NOT_FOUND) . $admin . '<br>';
+			if ($item->courseAdmins->__toString()) {
+				foreach (explode(',', $item->courseAdmins->__toString()) as $admin) {
+					if (!ilObjUser::_loginExists($admin)) {
+						$this->last_error .= sprintf($this->pl->txt(self::ERROR_ADMIN_NOT_FOUND), $admin);
+					}
 				}
 			}
 
 			//existing refId and object type
 			if ($ref_id = (int) $item->refId) {
 				if (!ilObject2::_exists($ref_id, true)) {
-					$this->last_error .= $this->pl->txt(self::ERROR_REF_ID_NOT_FOUND) . $ref_id . '<br>';
+					$this->last_error .= sprintf($this->pl->txt(self::ERROR_REF_ID_NOT_FOUND), $ref_id);
 				} elseif (ilObject2::_lookupType($ref_id, true) != 'crs') {
-					$this->last_error .= $this->pl->txt(self::ERROR_WRONG_OBJECT_TYPE)
-						. $ref_id . ', ' . ilObject2::_lookupType($ref_id, true) . '<br>';
+					$this->last_error .= sprintf($this->pl->txt(self::ERROR_WRONG_OBJECT_TYPE),
+						$ref_id, ilObject2::_lookupType($ref_id, true));
 				}
 			}
 
 			//existing parent id
 			$hierarchy = (int) $item->hierarchy;
 			if (!ilObject2::_exists($hierarchy, true)) {
-				$this->last_error .= $this->pl->txt(self::ERROR_PARENT_NOT_FOUND) . $hierarchy . '<br>';
+				$this->last_error .= sprintf($this->pl->txt(self::ERROR_PARENT_NOT_FOUND), $hierarchy);
 			} else {
 				//parent is category
-				if (ilObject2::_lookupType($hierarchy, true) != 'cat') {
-					$this->last_error .= $this->pl->txt(self::ERROR_PARENT_NOT_CATEGORY) . $hierarchy . '<br>';
+				if ($hierarchy != 1 && ilObject2::_lookupType($hierarchy, true) != 'cat') {
+					$this->last_error .= sprintf($this->pl->txt(self::ERROR_PARENT_NOT_CATEGORY), $hierarchy);
 				}
 			}
 
@@ -129,11 +132,11 @@ class ilCourseImportValidator {
 			if (isset($item->references)) {
 				foreach (explode(',', $item->references->__toString()) as $ref){
 					if (!ilObject2::_exists($ref, true)) {
-						$this->last_error .= $this->pl->txt(self::ERROR_PARENT_FOR_REFERENCE_NOT_FOUND) . $ref . '<br>';
+						$this->last_error .= sprintf($this->pl->txt(self::ERROR_PARENT_FOR_REFERENCE_NOT_FOUND), $ref);
 					} else {
 						//parent for reference is container
 						if (!$this->objDefinition->isContainer(ilObject2::_lookupType($ref, true))) {
-							$this->last_error .= $this->pl->txt(self::ERROR_PARENT_FOR_REFERENCE_NOT_CONTAINER) . $ref . '<br>';
+							$this->last_error .= sprintf($this->pl->txt(self::ERROR_PARENT_FOR_REFERENCE_NOT_CONTAINER), $ref);
 						}
 					}
 				}
@@ -145,13 +148,13 @@ class ilCourseImportValidator {
 				$courseTimeframe = $item->courseTimeframe;
 				//check if beginning/end date/time exist
 				if (!$courseTimeframe->courseBeginningDate || !$courseTimeframe->courseEndDate) {
-					$this->last_error .= $this->pl->txt(self::ERROR_TIMEFRAME_INCOMPLETE) . $item->title . '<br>';
+					$this->last_error .= sprintf($this->pl->txt(self::ERROR_TIMEFRAME_INCOMPLETE), $item->title);
 				} else {
 					//check if beginning is before end
 					$beginning = new ilDate($courseTimeframe->courseBeginningDate->__toString(), IL_CAL_DATE);
 					$end = new ilDate($courseTimeframe->courseEndDate->__toString(), IL_CAL_DATE);
 					if (ilDate::_after($beginning, $end)) {
-						$this->last_error .= $this->pl->txt(self::ERROR_BEGINNING_BEFORE_END) . $item->title . '<br>';
+						$this->last_error .= sprintf($this->pl->txt(self::ERROR_BEGINNING_BEFORE_END), $item->title);
 					}
 				}
 
@@ -161,7 +164,7 @@ class ilCourseImportValidator {
 				$courseInscriptionTimeframe = $item->courseInscriptionTimeframe;
 				if (!$courseInscriptionTimeframe->courseInscriptionBeginningDate || !$courseInscriptionTimeframe->courseInscriptionBeginningTime ||
 					!$courseInscriptionTimeframe->courseInscriptionEndDate || !$courseInscriptionTimeframe->courseInscriptionEndTime) {
-					$this->last_error .= $this->pl->txt(self::ERROR_INSCRIPTION_TIMEFRAME_INCOMPLETE) . $item->title . '<br>';
+					$this->last_error .= sprintf($this->pl->txt(self::ERROR_INSCRIPTION_TIMEFRAME_INCOMPLETE), $item->title);
 				} else {
 					//check if beginning is before end
 					$beginning = new ilDateTime(
@@ -173,7 +176,7 @@ class ilCourseImportValidator {
 						$courseInscriptionTimeframe->courseInscriptionEndTime->__toString(),
 						IL_CAL_DATETIME);
 					if (!ilDateTime::_before($beginning, $end)) {
-						$this->last_error .= $this->pl->txt(self::ERROR_INSCRIPTION_BEGINNING_BEFORE_END) . $item->title . '<br>';
+						$this->last_error .= sprintf($this->pl->txt(self::ERROR_INSCRIPTION_BEGINNING_BEFORE_END), $item->title);
 					}
 				}
 			}

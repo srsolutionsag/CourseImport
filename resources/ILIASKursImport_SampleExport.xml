@@ -3,8 +3,8 @@
 	<ns1:course>
 		<ns1:refId>68</ns1:refId>
 		<ns1:title>Mathematik 1</ns1:title>
-		<ns1:hierarchy>65</ns1:hierarchy>
-		<ns1:references>65,66,67</ns1:references>
+		<ns1:hierarchy>123</ns1:hierarchy>
+		<ns1:references>235,444,479</ns1:references>
 		<ns1:courseAdmins>a.einstein</ns1:courseAdmins>
 		<ns1:directRegistration>true</ns1:directRegistration>
 		<ns1:courseTimeframe/>
@@ -18,8 +18,8 @@
 	<ns1:course>
 		<ns1:title>Mathematik 2</ns1:title>
 		<ns1:description>Einführung in die Boolesche Algebra</ns1:description>
-		<ns1:hierarchy>66</ns1:hierarchy>
-		<ns1:courseAdmins>t.edison,n.tesla</ns1:courseAdmins>
+		<ns1:hierarchy>123</ns1:hierarchy>
+		<ns1:courseAdmins>t.edison,n.tesla,p.vonsamos</ns1:courseAdmins>
 		<ns1:online>false</ns1:online>
 		<ns1:welcomeMail>true</ns1:welcomeMail>
 		<ns1:courseTimeframe>

@@ -4,6 +4,7 @@ require_once './Modules/Course/classes/class.ilObjCourse.php';
 require_once './Modules/CourseReference/classes/class.ilObjCourseReference.php';
 require_once './Services/Object/classes/class.ilObject2.php';
 require_once './Modules/Course/classes/class.ilCourseParticipants.php';
+require_once './Customizing/global/plugins/Services/UIComponent/UserInterfaceHook/CourseImport/classes/class.ilCourseImportValidator.php';
 /**
  * Class ilCourseImportGUI
  *
@@ -15,17 +16,7 @@ require_once './Modules/Course/classes/class.ilCourseParticipants.php';
 class ilCourseImportGUI
 {
 
-	const XSD_FILEPATH = './Customizing/global/plugins/Services/UIComponent/UserInterfaceHook/CourseImport/resources/courses.xsd';
 	const XML_PREFIX = 'ns1';
-
-	const ERROR_ADMIN_NOT_FOUND = 'error_admin';
-	const ERROR_REF_ID_NOT_FOUND = 'error_ref_id';
-	const ERROR_WRONG_OBJECT_TYPE = 'error_obj_type';
-	const ERROR_PARENT_NOT_FOUND = 'error_parent';
-	const ERROR_PARENT_FOR_REFERENCE_NOT_FOUND = 'error_parent_ref';
-	const ERROR_TIMEFRAME_INCOMPLETE = 'error_timeframe';
-	const ERROR_INSCRIPTION_TIMEFRAME_INCOMPLETE = 'error_inscription';
-
 	const IMPORT_SUCCEEDED = 'import_succeeded';
 
 
@@ -58,10 +49,6 @@ class ilCourseImportGUI
 	 */
 	protected $tree;
 	/**
-	 * @var String
-	 */
-	protected $last_error;
-	/**
 	 * $courses['updated'], $courses['new']
 	 * @var array
 	 */
@@ -80,7 +67,6 @@ class ilCourseImportGUI
 		$this->tpl = $tpl;
 		$this->ilLocator = $ilLocator;
 		$this->pl = ilCourseImportPlugin::getInstance();
-		$this->courses = array('new' => '', 'updated' => '');
 	}
 
 	/**
@@ -174,102 +160,20 @@ class ilCourseImportGUI
 		if ($form->checkInput()) {
 			$file = $form->getFileUpload('file_input');
 			$xml_file = $file['tmp_name'];
-			$this->validate($xml_file);
+
+			$validator = new ilCourseImportValidator($xml_file);
+			$validator->validate();
+			if ($last_error = $validator->getLastError()) {
+				ilUtil::sendFailure($last_error, true);
+				$this->ctrl->redirect($this, 'view');
+			}
+
 			$this->createCourses($xml_file);
 			ilUtil::sendSuccess(sprintf($this->pl->txt(self::IMPORT_SUCCEEDED),
-				$this->courses['created'], $this->courses['updated']));
+				$this->courses['created'], $this->courses['updated'], $this->courses['refs']));
 		}
 
 		$this->view();
-	}
-
-	/**
-	 * validate fileupload with xsd and ilias specific validation
-	 *
-	 * @param $xml_file
-	 * @return bool
-	 * @internal param String $xml
-	 */
-	protected function validate($xml_file) {
-		$this->last_error = '';
-		$xml = new DOMDocument();
-		$xml->load($xml_file);
-		if (! $xml->schemaValidate(self::XSD_FILEPATH)) {
-			$this->last_error .= $this->pl->txt('error_xsd_validation') . '<br>' .
-				libxml_get_last_error()->message . '<br>' .
-				libxml_get_last_error()->level . '<br>' .
-				libxml_get_last_error()->line . '<br>';
-		}
-
-		$this->validateIliasSpecific($xml_file);
-
-		if ($this->last_error) {
-			ilUtil::sendFailure($this->last_error, true);
-			$this->ctrl->redirect($this, 'view');
-		}
-
-		return true;
-	}
-
-	/**
-	 * invoked by $this->validate()
-	 * check ilias specific invariants which can't be checked by the xsd file
-	 *
-	 * @param String $xml
-	 */
-	protected function validateIliasSpecific($xml) {
-		$data = simplexml_load_file($xml);
-		foreach ($data->children(self::XML_PREFIX, true) as $item) {
-			//admin login exists in ilias
-			foreach (explode(',', $item->courseAdmins->__toString()) as $admin) {
-				if (!ilObjUser::_loginExists($admin)) {
-					$this->last_error .= $this->pl->txt(self::ERROR_ADMIN_NOT_FOUND) . $admin . '<br>';
-				}
-			}
-
-			//existing refId and object type
-			if ($ref_id = (int) $item->refId) {
-				if (!ilObject2::_exists($ref_id, true)) {
-					$this->last_error .= $this->pl->txt(self::ERROR_REF_ID_NOT_FOUND) . $ref_id . '<br>';
-				} elseif (ilObject2::_lookupType($ref_id, true) != 'crs') {
-					$this->last_error .= $this->pl->txt(self::ERROR_WRONG_OBJECT_TYPE)
-						. $ref_id . ', ' . ilObject2::_lookupType($ref_id, true) . '<br>';
-				}
-			}
-
-			//existing parent id TODO: is container?
-			if (!ilObject2::_exists($item->hierarchy, true)) {
-				$this->last_error .= $this->pl->txt(self::ERROR_PARENT_NOT_FOUND) . $item->hierarchy . '<br>';
-			}
-
-			//existing parent id for references TODO: is container?
-			if (isset($item->references)) {
-				foreach (explode(',', $item->references->__toString()) as $ref){
-					if (!ilObject2::_exists($ref, true)) {
-						$this->last_error .= $this->pl->txt(self::ERROR_PARENT_FOR_REFERENCE_NOT_FOUND) . $ref . '<br>';
-					}
-				}
-			}
-
-			//if coursetimeFrame exists, check if beginning/end date/time exist
-			if (!empty($item->courseTimeframe)) {
-				$courseTimeframe = $item->courseTimeframe;
-				if (!$courseTimeframe->courseBeginningDate || !$courseTimeframe->courseBeginningTime ||
-					!$courseTimeframe->courseEndDate || !$courseTimeframe->courseEndTime) {
-					$this->last_error .= $this->pl->txt(self::ERROR_TIMEFRAME_INCOMPLETE) . $item->title . '<br>';
-				}
-			}
-
-			if (!empty($item->courseInscriptionTimeframe)) {
-				$courseInscriptionTimeframe = $item->courseInscriptionTimeframe;
-				if (!$courseInscriptionTimeframe->courseInscriptionBeginningDate || !$courseInscriptionTimeframe->courseInscriptionBeginningTime ||
-					!$courseInscriptionTimeframe->courseInscriptionEndDate || !$courseInscriptionTimeframe->courseInscriptionEndTime) {
-					$this->last_error .= $this->pl->txt(self::ERROR_INSCRIPTION_TIMEFRAME_INCOMPLETE) . $item->title . '<br>';
-				}
-			}
-
-		}
-		//TODO: dates/times -> check start before end
 	}
 
 	/**
@@ -300,56 +204,62 @@ class ilCourseImportGUI
 				$course->setAutoNotification((bool) $item->welcomeMail);
 			}
 
-			//activation time range
-			if (!empty($item->courseTimeframe)) {
-				$courseTimeframe = $item->courseTimeframe;
-				$course->setActivationType(IL_CRS_ACTIVATION_LIMITED);
-				$start = new ilDateTime(
-					$courseTimeframe->courseBeginningDate->__toString() . ' ' .
-					$courseTimeframe->courseBeginningTime->__toString(),
-					IL_CAL_DATETIME);
-				$course->setActivationStart($start->getUnixTime());
-				$end = new ilDateTime(
-					$courseTimeframe->courseEndDate->__toString() . ' ' .
-					$courseTimeframe->courseEndTime->__toString(),
-					IL_CAL_DATETIME);
-				$course->setActivationEnd($end->getUnixTime());
+
+			//subscription time range: if there's no timeframe defined, leave the current/default timeframe,
+			//if it is defined but empty, unset the timeframe
+			if ($item->courseInscriptionTimeframe) {
+				if (!empty($item->courseInscriptionTimeframe)) {
+					$courseInscriptionTimeframe = $item->courseInscriptionTimeframe;
+					$course->setSubscriptionLimitationType(ilCourseConstants::SUBSCRIPTION_LIMITED);
+					$start = new ilDateTime(
+						$courseInscriptionTimeframe->courseInscriptionBeginningDate->__toString() . ' ' .
+						$courseInscriptionTimeframe->courseInscriptionBeginningTime->__toString(),
+						IL_CAL_DATETIME);
+					$course->setSubscriptionStart($start->getUnixTime());
+					$end = new ilDateTime(
+						$courseInscriptionTimeframe->courseInscriptionEndDate->__toString() . ' ' .
+						$courseInscriptionTimeframe->courseInscriptionEndTime->__toString(),
+						IL_CAL_DATETIME);
+					$course->setSubscriptionEnd($end->getUnixTime());
+				} else {
+
+				}
 			}
 
-			//subscription time range
-			if (!empty($item->courseInscriptionTimeframe)) {
-				$courseInscriptionTimeframe = $item->courseInscriptionTimeframe;
-				$course->setSubscriptionLimitationType(ilCourseConstants::SUBSCRIPTION_LIMITED);
-				$start = new ilDateTime(
-					$courseInscriptionTimeframe->courseInscriptionBeginningDate->__toString() . ' ' .
-					$courseInscriptionTimeframe->courseInscriptionBeginningTime->__toString(),
-					IL_CAL_DATETIME);
-				$course->setSubscriptionStart($start->getUnixTime());
-				$end = new ilDateTime(
-					$courseInscriptionTimeframe->courseInscriptionEndDate->__toString() . ' ' .
-					$courseInscriptionTimeframe->courseInscriptionEndTime->__toString(),
-					IL_CAL_DATETIME);
-				$course->setSubscriptionEnd($end->getUnixTime());
-			}
 
 			//create/update
+			$hierarchy_id = (int) $item->hierarchy;
 			if ($ref_id = $course->getRefId()) {
 				$course->update();
 				$parent_id = $this->tree->getParentId($ref_id);
-				if ($parent_id != $item->hierarchy) {
+				if ($parent_id != $hierarchy_id) {
 					//move course
 					$this->tree->deleteNode(1, $ref_id);
-					$course->putInTree($item->hierarchy);
+					$course->putInTree($hierarchy_id);
 				}
-				$this->courses['updated'] .= $course->getTitle() . '<br>';
+				$this->courses['updated'] .= ilObject2::_lookupTitle(ilObject2::_lookupObjId($hierarchy_id)) . ' - ' . $course->getTitle() . '<br>';
 			} else {
 				$course->create();
 				$course->createReference();
-				$course->putInTree((int) $item->hierarchy);
-				$course->setPermissions((int) $item->hierarchy);
-				$this->courses['created'] = $course->getTitle() . '<br>';
+				$course->putInTree($hierarchy_id);
+				$course->setPermissions($hierarchy_id);
+				$this->courses['created'] .= ilObject2::_lookupTitle(ilObject2::_lookupObjId($hierarchy_id)) . ' - ' . $course->getTitle() . '<br>';
 			}
 
+			//course time range:  if there's no timeframe defined, leave the current/default timeframe,
+			//if it is defined but empty, unset the timeframe
+			if (!empty($item->courseTimeframe)) {
+				$courseTimeframe = $item->courseTimeframe;
+				$start = new ilDate(
+					$courseTimeframe->courseBeginningDate->__toString(),
+					IL_CAL_DATE);
+				$course->setCourseStart($start);
+				$end = new ilDate(
+					$courseTimeframe->courseEndDate->__toString(),
+					IL_CAL_DATE);
+				$course->setCourseEnd($end);
+				$course->update();
+			}
 
 			//add course admins
 			$participants = ilCourseParticipants::_getInstanceByObjId($course->getId());
@@ -377,6 +287,7 @@ class ilCourseImportGUI
 
 					$course_ref->setTargetid($course->getId());
 					$course_ref->update();
+					$this->courses['refs'] .= ilObject2::_lookupTitle(ilObject2::_lookupObjId($parent_id)) . ' - ' . ilObject2::_lookupTitle($course_ref->getTargetId()) . '<br>';
 				}
 			}
 

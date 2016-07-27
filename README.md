@@ -1,7 +1,7 @@
 CourseImport
 ============
-CourseImport Plugin, finanziert durch Hoschule Bremerhaven. Entwickelt durch studer + raimann ag. Das Plugin unterliegt der GNU/GPL. 
-Die studer + raimann ag garantiert bei diesem Plugin keine zeitnahe Release-Updates. 
+CourseImport Plugin, finanziert durch Hochschule Bremerhaven. Entwickelt durch studer + raimann ag. Das Plugin unterliegt der GNU/GPL. 
+Die studer + raimann ag garantiert bei diesem Plugin keine zeitnahen Release-Updates. 
 Falls Sie interessiert an einer Pluginpatenschaft mit garantierten Release-Updates sind, 
 so informieren Sie sich unter https://studer-raimann.ch/produkte/ilias-plugins/
 

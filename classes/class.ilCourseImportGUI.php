@@ -5,22 +5,22 @@ require_once './Modules/CourseReference/classes/class.ilObjCourseReference.php';
 require_once './Services/Object/classes/class.ilObject2.php';
 require_once './Modules/Course/classes/class.ilCourseParticipants.php';
 require_once './Customizing/global/plugins/Services/UIComponent/UserInterfaceHook/CourseImport/classes/class.ilCourseImportValidator.php';
+
 /**
  * Class ilCourseImportGUI
  *
- * @author  Theodor Truffer <tt@studer-raimann.ch>
+ * @author            Theodor Truffer <tt@studer-raimann.ch>
  *
  * @ilCtrl_IsCalledBy ilCourseImportGUI: ilUIPluginRouterGUI
- * @ilCtrl_Calls ilCourseImportGUI: ilObjCourseAdministrationGUI
+ * @ilCtrl_Calls      ilCourseImportGUI: ilObjCourseAdministrationGUI
  */
-class ilCourseImportGUI
-{
+class ilCourseImportGUI {
 
 	const XML_PREFIX = 'ns1';
 	const IMPORT_SUCCEEDED = 'import_succeeded';
 	const IMPORT_FAILED = 'import_failed';
-
-
+	const TYPE_XML = 'xml';
+	const TYPE_XLSX = 'xlsx';
 	/**
 	 * @var ilCtrl
 	 */
@@ -51,15 +51,16 @@ class ilCourseImportGUI
 	protected $tree;
 	/**
 	 * $courses['updated'], $courses['new']
+	 *
 	 * @var array
 	 */
 	protected $courses;
 
+
 	/**
 	 * ilCourseImportGUI constructor.
 	 */
-	public function __construct()
-	{
+	public function __construct() {
 		global $tree, $ilCtrl, $tpl, $ilTabs, $ilLocator, $lng;
 		$this->tree = $tree;
 		$this->lng = $lng;
@@ -69,6 +70,7 @@ class ilCourseImportGUI
 		$this->ilLocator = $ilLocator;
 		$this->pl = ilCourseImportPlugin::getInstance();
 	}
+
 
 	/**
 	 *
@@ -89,40 +91,47 @@ class ilCourseImportGUI
 		$this->tpl->show();
 	}
 
+
 	/**
 	 * set title, description, icon, backtarget
 	 */
 	protected function prepareOutput() {
 		$this->ctrl->setParameterByClass('ilobjcourseadministrationgui', 'ref_id', $_GET['ref_id']);
-		$this->tabs->setBackTarget($this->pl->txt('back'), $this->ctrl->getLinkTargetByClass(array('iladministrationgui', 'ilobjcourseadministrationgui')));
+		$this->tabs->setBackTarget($this->pl->txt('back'), $this->ctrl->getLinkTargetByClass(array(
+			'iladministrationgui',
+			'ilobjcourseadministrationgui',
+		)));
 		$this->setTitleAndIcon();
 		$this->setLocator();
 	}
 
+
 	/**
 	 * invoked by prepareOutput
 	 */
-	protected function setTitleAndIcon()
-	{
+	protected function setTitleAndIcon() {
 		$this->tpl->setTitleIcon(ilUtil::getImagePath('icon_crs.svg'));
 		$this->tpl->setTitle($this->lng->txt('obj_crss'));
 		$this->tpl->setDescription($this->lng->txt('obj_crss_desc'));
 	}
 
+
 	/**
 	 * invoked by prepareOutput
 	 */
-	protected function setLocator()
-	{
-		$this->ctrl->setParameterByClass("ilobjsystemfoldergui",
-			"ref_id", SYSTEM_FOLDER_ID);
-		$this->ilLocator->addItem($this->lng->txt("administration"),
-			$this->ctrl->getLinkTargetByClass(array("iladministrationgui", "ilobjsystemfoldergui"), "")
-		);
-		$this->ilLocator->addItem($this->lng->txt('obj_crss'),
-			$this->ctrl->getLinkTargetByClass(array('iladministrationgui', 'ilobjcourseadministrationgui')));
+	protected function setLocator() {
+		$this->ctrl->setParameterByClass("ilobjsystemfoldergui", "ref_id", SYSTEM_FOLDER_ID);
+		$this->ilLocator->addItem($this->lng->txt("administration"), $this->ctrl->getLinkTargetByClass(array(
+			"iladministrationgui",
+			"ilobjsystemfoldergui",
+		), ""));
+		$this->ilLocator->addItem($this->lng->txt('obj_crss'), $this->ctrl->getLinkTargetByClass(array(
+			'iladministrationgui',
+			'ilobjcourseadministrationgui',
+		)));
 		$this->tpl->setLocator();
 	}
+
 
 	/**
 	 * default command
@@ -131,6 +140,7 @@ class ilCourseImportGUI
 		$form = $this->initForm();
 		$this->tpl->setContent($form->getHTML());
 	}
+
 
 	/**
 	 * @return ilPropertyFormGUI
@@ -143,13 +153,14 @@ class ilCourseImportGUI
 
 		$file_input = new ilFileInputGUI($this->pl->txt('file_input'), 'file_input');
 		$file_input->setRequired(true);
-		$file_input->setSuffixes(array('xml'));
+		$file_input->setSuffixes(array( self::TYPE_XML, self::TYPE_XLSX ));
 
 		$form->addItem($file_input);
 		$form->addCommandButton('saveForm', $this->pl->txt('import_courses'));
 
 		return $form;
 	}
+
 
 	/**
 	 * form action
@@ -160,30 +171,49 @@ class ilCourseImportGUI
 
 		if ($form->checkInput()) {
 			$file = $form->getFileUpload('file_input');
-			$xml_file = $file['tmp_name'];
-
-			$validator = new ilCourseImportValidator($xml_file);
-			$validator->validate();
-			if ($last_error = $validator->getLastError()) {
-				ilUtil::sendFailure($this->pl->txt(self::IMPORT_FAILED) . $last_error, true);
-				$this->ctrl->redirect($this, 'view');
+			$file_suffix = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+			$uploaded_file = $file['tmp_name'];
+			switch ($file_suffix) {
+				case self::TYPE_XML:
+					$this->createCoursesFromXMLFile($uploaded_file);
+					break;
+				case self::TYPE_XLSX:
+					require_once('class.ilCourseImportExcelConverter.php');
+					$ilCourseImportExcelConverter = new ilCourseImportExcelConverter($uploaded_file);
+					$ilCourseImportExcelConverter->convert();
+					$this->createCoursesFromXMLString($ilCourseImportExcelConverter->getXmlText());
+					break;
 			}
 
-			$this->createCourses($xml_file);
-			ilUtil::sendSuccess(sprintf($this->pl->txt(self::IMPORT_SUCCEEDED),
-				$this->courses['created'], $this->courses['updated'], $this->courses['refs']));
+			ilUtil::sendSuccess(sprintf($this->pl->txt(self::IMPORT_SUCCEEDED), $this->courses['created'], $this->courses['updated'], $this->courses['refs']));
 		}
 
 		$this->view();
 	}
 
+
 	/**
-	 * invoked after positive validation
-	 *
-	 * @param $xml
+	 * @param $data
 	 */
-	protected function createCourses($xml) {
-		$data = simplexml_load_file($xml);
+	protected function createCoursesFromXMLString($data) {
+		$this->createCoursesFromXMLData(simplexml_load_string($data));
+	}
+
+
+	/**
+	 * @param \SimpleXMLElement $data
+	 */
+	protected function createCoursesFromXMLData(SimpleXMLElement $data) {
+		// Validate
+		$validator = new ilCourseImportValidator($data);
+		$validator->validate();
+		if ($last_error = $validator->getLastError()) {
+			ilUtil::sendFailure($this->pl->txt(self::IMPORT_FAILED) . $last_error, true);
+			$this->ctrl->redirect($this, 'view');
+			exit;
+		}
+
+		// Run
 		foreach ($data->children(self::XML_PREFIX, true) as $item) {
 			$course = new ilObjCourse($item->refId);
 			$course->setTitle($item->title->__toString());
@@ -201,7 +231,7 @@ class ilCourseImportGUI
 			}
 
 			//direct registration
-			if($item->directRegistration == "true"){
+			if ($item->directRegistration == "true") {
 				$course->setSubscriptionType(IL_CRS_SUBSCRIPTION_DIRECT);
 			} elseif ($item->directRegistration == "false") {
 				$course->setSubscriptionType(IL_CRS_SUBSCRIPTION_DEACTIVATED);
@@ -216,31 +246,25 @@ class ilCourseImportGUI
 				}
 			}
 
-
 			//subscription time range: if there's no timeframe defined, leave the current/default timeframe,
 			//if it is defined but empty, unset the timeframe
 			if ($item->courseInscriptionTimeframe) {
 				if (!empty($item->courseInscriptionTimeframe)) {
 					$courseInscriptionTimeframe = $item->courseInscriptionTimeframe;
 					$course->setSubscriptionLimitationType(ilCourseConstants::SUBSCRIPTION_LIMITED);
-					$start = new ilDateTime(
-						$courseInscriptionTimeframe->courseInscriptionBeginningDate->__toString() . ' ' .
-						$courseInscriptionTimeframe->courseInscriptionBeginningTime->__toString(),
-						IL_CAL_DATETIME);
+					$start = new ilDateTime($courseInscriptionTimeframe->courseInscriptionBeginningDate->__toString() . ' '
+					                        . $courseInscriptionTimeframe->courseInscriptionBeginningTime->__toString(), IL_CAL_DATETIME);
 					$course->setSubscriptionStart($start->getUnixTime());
-					$end = new ilDateTime(
-						$courseInscriptionTimeframe->courseInscriptionEndDate->__toString() . ' ' .
-						$courseInscriptionTimeframe->courseInscriptionEndTime->__toString(),
-						IL_CAL_DATETIME);
+					$end = new ilDateTime($courseInscriptionTimeframe->courseInscriptionEndDate->__toString() . ' '
+					                      . $courseInscriptionTimeframe->courseInscriptionEndTime->__toString(), IL_CAL_DATETIME);
 					$course->setSubscriptionEnd($end->getUnixTime());
 				} else {
 					$course->setSubscriptionLimitationType(ilCourseConstants::SUBSCRIPTION_UNLIMITED);
 				}
 			}
 
-
 			//create/update
-			$hierarchy_id = (int) $item->hierarchy;
+			$hierarchy_id = (int)$item->hierarchy;
 			if ($ref_id = $course->getRefId()) {
 				$course->update();
 				$parent_id = $this->tree->getParentId($ref_id);
@@ -264,13 +288,9 @@ class ilCourseImportGUI
 				if (!empty($item->courseTimeframe)) {
 					$course->setActivationType(IL_CRS_ACTIVATION_LIMITED);
 					$courseTimeframe = $item->courseTimeframe;
-					$start = new ilDate(
-						$courseTimeframe->courseBeginningDate->__toString(),
-						IL_CAL_DATE);
+					$start = new ilDate($courseTimeframe->courseBeginningDate->__toString(), IL_CAL_DATE);
 					$course->setCourseStart($start);
-					$end = new ilDate(
-						$courseTimeframe->courseEndDate->__toString(),
-						IL_CAL_DATE);
+					$end = new ilDate($courseTimeframe->courseEndDate->__toString(), IL_CAL_DATE);
 					$course->setCourseEnd($end);
 					$course->update();
 				} else {
@@ -280,7 +300,6 @@ class ilCourseImportGUI
 					$course->update();
 				}
 			}
-
 
 			//set course admins
 			$participants = ilCourseParticipants::_getInstanceByObjId($course->getId());
@@ -298,7 +317,6 @@ class ilCourseImportGUI
 				$participants->delete($rm);
 			}
 
-
 			$course->setOwner(ilObjUser::_lookupId($admins[0]));
 			$course->updateOwner();
 
@@ -314,19 +332,28 @@ class ilCourseImportGUI
 
 					$course_ref->setTargetid($course->getId());
 					$course_ref->update();
-					$this->courses['refs'] .= ilObject2::_lookupTitle(ilObject2::_lookupObjId($parent_id)) . ' - ' . ilObject2::_lookupTitle($course_ref->getTargetId()) . '<br>';
+					$this->courses['refs'] .= ilObject2::_lookupTitle(ilObject2::_lookupObjId($parent_id)) . ' - '
+					                          . ilObject2::_lookupTitle($course_ref->getTargetId()) . '<br>';
 				}
 			}
-
 		}
 	}
+
+
+	/**
+	 * invoked after positive validation
+	 *
+	 * @param $path_to_xml
+	 */
+	protected function createCoursesFromXMLFile($path_to_xml) {
+		$this->createCoursesFromXMLData(simplexml_load_file($path_to_xml));
+	}
+
 
 	protected function checkAccess() {
 		global $ilAccess, $ilErr;
-		if(!$ilAccess->checkAccess("read", "", $_GET['ref_id']))
-		{
+		if (!$ilAccess->checkAccess("read", "", $_GET['ref_id'])) {
 			$ilErr->raiseError($this->lng->txt("no_permission"), $ilErr->WARNING);
 		}
 	}
-
 }

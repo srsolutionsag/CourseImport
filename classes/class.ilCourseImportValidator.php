@@ -10,7 +10,6 @@ class ilCourseImportValidator {
 
 	const XSD_FILEPATH = './Customizing/global/plugins/Services/UIComponent/UserInterfaceHook/CourseImport/resources/courses.xsd';
 	const XML_PREFIX = 'ns1';
-
 	const ERROR_XSD_VALIDATION = 'error_xsd';
 	const ERROR_ILIAS_VALIDATION = 'error_ilias';
 	const ERROR_ADMIN_NOT_FOUND = 'error_admin';
@@ -24,7 +23,6 @@ class ilCourseImportValidator {
 	const ERROR_BEGINNING_BEFORE_END = 'error_beginning_end';
 	const ERROR_INSCRIPTION_TIMEFRAME_INCOMPLETE = 'error_inscription';
 	const ERROR_INSCRIPTION_BEGINNING_BEFORE_END = 'error_inscription_beginning_end';
-
 	/**
 	 * @var ilCtrl
 	 */
@@ -46,21 +44,21 @@ class ilCourseImportValidator {
 	 */
 	protected $objDefinition;
 	/**
-	 * @var string
+	 * @var SimpleXMLElement
 	 */
-	protected $xml_file;
+	protected $xml;
+
+
 	/**
 	 * ilCourseImportGUI constructor.
 	 */
-	public function __construct($xml_file)
-	{
+	public function __construct(SimpleXMLElement $xml) {
 		global $ilCtrl, $lng, $objDefinition;
 		$this->lng = $lng;
 		$this->ctrl = $ilCtrl;
 		$this->pl = ilCourseImportPlugin::getInstance();
 		$this->objDefinition = $objDefinition;
-
-		$this->xml_file = $xml_file;
+		$this->xml = $xml;
 	}
 
 
@@ -74,16 +72,13 @@ class ilCourseImportValidator {
 	public function validate() {
 		$this->last_error = '';
 		$xml = new DOMDocument();
-		$xml->load($this->xml_file);
-		if (! $xml->schemaValidate(self::XSD_FILEPATH)) {
-			$this->last_error .= sprintf($this->pl->txt(self::ERROR_XSD_VALIDATION),
-				libxml_get_last_error()->message,
-				libxml_get_last_error()->line);
+		$xml->loadXML($this->xml->asXML());
+		if (!$xml->schemaValidate(self::XSD_FILEPATH)) {
+			$this->last_error .= sprintf($this->pl->txt(self::ERROR_XSD_VALIDATION), libxml_get_last_error()->message, libxml_get_last_error()->line);
 			$this->last_error .= $this->pl->txt(self::ERROR_ILIAS_VALIDATION);
 		}
 
 		$this->validateIliasSpecific();
-
 	}
 
 
@@ -94,7 +89,7 @@ class ilCourseImportValidator {
 	 * @internal param String $xml
 	 */
 	protected function validateIliasSpecific() {
-		$data = simplexml_load_file($this->xml_file);
+		$data = $this->xml;
 		foreach ($data->children(self::XML_PREFIX, true) as $item) {
 			//admin login exists in ilias
 			if ($item->courseAdmins->__toString()) {
@@ -106,17 +101,16 @@ class ilCourseImportValidator {
 			}
 
 			//existing refId and object type
-			if ($ref_id = (int) $item->refId) {
+			if ($ref_id = (int)$item->refId) {
 				if (!ilObject2::_exists($ref_id, true)) {
 					$this->last_error .= sprintf($this->pl->txt(self::ERROR_REF_ID_NOT_FOUND), $ref_id);
 				} elseif (ilObject2::_lookupType($ref_id, true) != 'crs') {
-					$this->last_error .= sprintf($this->pl->txt(self::ERROR_WRONG_OBJECT_TYPE),
-						$ref_id, ilObject2::_lookupType($ref_id, true));
+					$this->last_error .= sprintf($this->pl->txt(self::ERROR_WRONG_OBJECT_TYPE), $ref_id, ilObject2::_lookupType($ref_id, true));
 				}
 			}
 
 			//existing parent id
-			$hierarchy = (int) $item->hierarchy;
+			$hierarchy = (int)$item->hierarchy;
 			if (!ilObject2::_exists($hierarchy, true)) {
 				$this->last_error .= sprintf($this->pl->txt(self::ERROR_PARENT_NOT_FOUND), $hierarchy);
 			} else {
@@ -126,11 +120,9 @@ class ilCourseImportValidator {
 				}
 			}
 
-
-
 			//existing parent id for references
 			if (isset($item->references)) {
-				foreach (explode(',', $item->references->__toString()) as $ref){
+				foreach (explode(',', $item->references->__toString()) as $ref) {
 					if (!ilObject2::_exists($ref, true)) {
 						$this->last_error .= sprintf($this->pl->txt(self::ERROR_PARENT_FOR_REFERENCE_NOT_FOUND), $ref);
 					} else {
@@ -141,7 +133,6 @@ class ilCourseImportValidator {
 					}
 				}
 			}
-
 
 			//if coursetimeFrame exists..
 			if (!empty($item->courseTimeframe)) {
@@ -157,30 +148,26 @@ class ilCourseImportValidator {
 						$this->last_error .= sprintf($this->pl->txt(self::ERROR_BEGINNING_BEFORE_END), $item->title);
 					}
 				}
-
 			}
 
 			if (!empty($item->courseInscriptionTimeframe)) {
 				$courseInscriptionTimeframe = $item->courseInscriptionTimeframe;
-				if (!$courseInscriptionTimeframe->courseInscriptionBeginningDate || !$courseInscriptionTimeframe->courseInscriptionBeginningTime ||
-					!$courseInscriptionTimeframe->courseInscriptionEndDate || !$courseInscriptionTimeframe->courseInscriptionEndTime) {
+				if (!$courseInscriptionTimeframe->courseInscriptionBeginningDate || !$courseInscriptionTimeframe->courseInscriptionBeginningTime
+				    || !$courseInscriptionTimeframe->courseInscriptionEndDate
+				    || !$courseInscriptionTimeframe->courseInscriptionEndTime
+				) {
 					$this->last_error .= sprintf($this->pl->txt(self::ERROR_INSCRIPTION_TIMEFRAME_INCOMPLETE), $item->title);
 				} else {
 					//check if beginning is before end
-					$beginning = new ilDateTime(
-						$courseInscriptionTimeframe->courseInscriptionBeginningDate->__toString() . ' ' .
-						$courseInscriptionTimeframe->courseInscriptionBeginningTime->__toString(),
-						IL_CAL_DATETIME);
-					$end = new ilDateTime(
-						$courseInscriptionTimeframe->courseInscriptionEndDate->__toString() . ' ' .
-						$courseInscriptionTimeframe->courseInscriptionEndTime->__toString(),
-						IL_CAL_DATETIME);
+					$beginning = new ilDateTime($courseInscriptionTimeframe->courseInscriptionBeginningDate->__toString() . ' '
+					                            . $courseInscriptionTimeframe->courseInscriptionBeginningTime->__toString(), IL_CAL_DATETIME);
+					$end = new ilDateTime($courseInscriptionTimeframe->courseInscriptionEndDate->__toString() . ' '
+					                      . $courseInscriptionTimeframe->courseInscriptionEndTime->__toString(), IL_CAL_DATETIME);
 					if (!ilDateTime::_before($beginning, $end)) {
 						$this->last_error .= sprintf($this->pl->txt(self::ERROR_INSCRIPTION_BEGINNING_BEFORE_END), $item->title);
 					}
 				}
 			}
-
 		}
 	}
 
@@ -191,6 +178,4 @@ class ilCourseImportValidator {
 	public function getLastError() {
 		return $this->last_error;
 	}
-
-
 }

@@ -7,7 +7,7 @@ so informieren Sie sich unter https://studer-raimann.ch/produkte/ilias-plugins/
 
 ###Beschreibung
 Das CourseImport Plugin ist ein UIHook Plugin für die E-Learning Plattform ILIAS. Es ermöglicht das Importieren
-mehrerer Kurse durch Hochladen eines XML-Files. Die XML-Files weisen eine bestimmte Struktur vor, die zuerst durch
+mehrerer Kurse durch Hochladen eines Excel- oder eines XML-Files. Die XML-Files weisen eine bestimmte Struktur vor, die zuerst durch
 ein XSD-File und zusätzlich durch das Plugin validiert wird, bevor die Kurse in ILIAS erzeugt werden.
 
 ###Documentation

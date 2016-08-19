@@ -42,7 +42,7 @@ class ilCourseImportExcelConverter {
 		$objPHPExcel = PHPExcel_IOFactory::load($this->uploaded_file);
 		$data = $objPHPExcel->getSheet()->toArray();
 
-		if ($data[1] != $this->getValidHeaders()) {
+		if (array_slice($data[1], 0, count($this->getValidHeaders())) != $this->getValidHeaders()) {
 			throw new ilException('no valid file');
 		}
 		$xml = $this->getBaseXML();
@@ -79,13 +79,14 @@ class ilCourseImportExcelConverter {
 	protected function appendCourseArrayAsElement(SimpleXMLElement &$xml, array $array) {
 		$course = $xml->addChild('ns1:ns1:course', null);
 		foreach ($array as $i => $dat) {
-			if ($i > 8 || !$dat) {
+			if ($i > 8 || $dat === NULL) {
 				continue;
 			}
-			$course->addChild('ns1:ns1:' . $this->getMapping($i), $dat);
+			$course->addChild('ns1:ns1:' . $this->getMapping($i), $dat ? $dat : 0);
 		}
+
+		$courseTimeframe = $course->addChild('ns1:ns1:courseTimeframe');
 		if ($array[9] || $array[10] || $array[11] || $array[12]) {
-			$courseTimeframe = $course->addChild('ns1:ns1:courseTimeframe');
 			if ($array[9]) {
 				$courseTimeframe->addChild('ns1:ns1:' . $this->getMapping(9), date(self::DATE_FORMAT, strtotime($array[9])));
 			}
@@ -100,8 +101,8 @@ class ilCourseImportExcelConverter {
 			}
 		}
 
+		$courseInscriptionTimeframe = $course->addChild('ns1:ns1:courseInscriptionTimeframe');
 		if ($array[13] || $array[14] || $array[15] || $array[16]) {
-			$courseInscriptionTimeframe = $course->addChild('ns1:ns1:courseInscriptionTimeframe');
 			if ($array[13]) {
 				$courseInscriptionTimeframe->addChild('ns1:ns1:' . $this->getMapping(13), date(self::DATE_FORMAT, strtotime($array[13])));
 			}

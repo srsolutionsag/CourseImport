@@ -221,27 +221,19 @@ class ilCourseImportGUI {
 				$course->setDescription($description);
 			}
 
-			//online
-			if (isset($item->online)) {
-				if ($item->online == 'false') {
-					$course->setOfflineStatus(true);
-				} elseif ($item->online == 'true') {
-					$course->setOfflineStatus(false);
-				}
-			}
 
 			//direct registration
-			if ($item->directRegistration == "true") {
+			if ((bool) $item->directRegistration->__toString() == true || strtolower($item->directRegistration->__toString()) == "true") {
 				$course->setSubscriptionType(IL_CRS_SUBSCRIPTION_DIRECT);
-			} elseif ($item->directRegistration == "false") {
+			} elseif ((bool) $item->directRegistration->__toString() == false || strtolower($item->directRegistration->__toString()) == "false") {
 				$course->setSubscriptionType(IL_CRS_SUBSCRIPTION_DEACTIVATED);
 			}
 
 			//welcome mail
 			if (isset($item->welcomeMail)) {
-				if ($item->welcomeMail == 'false') {
+				if ((bool) $item->welcomeMail->__toString() == false || strtolower($item->welcomeMail->__toString()) == 'false') {
 					$course->setAutoNotification(false);
-				} elseif ($item->welcomeMail == 'true') {
+				} elseif ((bool) $item->welcomeMail->__toString() == true || strtolower($item->welcomeMail->__toString()) == 'true') {
 					$course->setAutoNotification(true);
 				}
 			}
@@ -282,11 +274,22 @@ class ilCourseImportGUI {
 				$this->courses['created'] .= ilObject2::_lookupTitle(ilObject2::_lookupObjId($hierarchy_id)) . ' - ' . $course->getTitle() . '<br>';
 			}
 
+
+			//online
+			if (isset($item->online)) {
+				if ((bool) $item->online->__toString() == false || strtolower($item->online->__toString()) == 'false') {
+					$course->setOfflineStatus(true);
+					$course->update();
+				} elseif ((bool) $item->online->__toString() == true || strtolower($item->online->__toString()) == 'true') {
+					$course->setOfflineStatus(false);
+					$course->update();
+				}
+			}
+
 			//course time range:  if there's no timeframe defined, leave the current/default timeframe,
 			//if it is defined but empty, unset the timeframe
 			if ($item->courseTimeframe) {
 				if (!empty($item->courseTimeframe)) {
-					$course->setActivationType(IL_CRS_ACTIVATION_LIMITED);
 					$courseTimeframe = $item->courseTimeframe;
 					$start = new ilDate($courseTimeframe->courseBeginningDate->__toString(), IL_CAL_DATE);
 					$course->setCourseStart($start);
@@ -294,7 +297,6 @@ class ilCourseImportGUI {
 					$course->setCourseEnd($end);
 					$course->update();
 				} else {
-					$course->setActivationType(IL_CRS_ACTIVATION_UNLIMITED);
 					$course->setCourseStart(null);
 					$course->setCourseEnd(null);
 					$course->update();

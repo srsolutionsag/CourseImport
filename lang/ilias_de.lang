@@ -1,7 +1,7 @@
-tab_course_import#:#XML Kurs-Import
+tab_course_import#:#Excel-/XML-Kursimport
 back#:#Zurück
-form_title#:#XML Kurs-Import
-file_input#:#XML Datei Hochladen
+form_title#:#Excel-/XML-Kursimport
+file_input#:#Excel-/XML-Datei Hochladen
 import_courses#:#Kurse Importieren
 error_xsd#:#XSD Validierung: <br>%s<br>Line: %s<br><br>
 error_ilias#:#ILIAS Validierung: <br>

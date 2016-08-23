@@ -215,43 +215,19 @@ class ilCourseImportGUI {
 
 		// Run
 		foreach ($data->children(self::XML_PREFIX, true) as $item) {
-			$course = new ilObjCourse($item->refId);
+			$ref_id = $item->refId->__toString() ? (int) $item->refId->__toString() : 0;
+			$course = new ilObjCourse($ref_id);
 			$course->setTitle($item->title->__toString());
 			if ($description = $item->description->__toString()) {
 				$course->setDescription($description);
 			}
 
-
-			//direct registration
-			if ((bool) $item->directRegistration->__toString() == true || strtolower($item->directRegistration->__toString()) == "true") {
-				$course->setSubscriptionType(IL_CRS_SUBSCRIPTION_DIRECT);
-			} elseif ((bool) $item->directRegistration->__toString() == false || strtolower($item->directRegistration->__toString()) == "false") {
-				$course->setSubscriptionType(IL_CRS_SUBSCRIPTION_DEACTIVATED);
-			}
-
 			//welcome mail
 			if (isset($item->welcomeMail)) {
-				if ((bool) $item->welcomeMail->__toString() == false || strtolower($item->welcomeMail->__toString()) == 'false') {
+				if (in_array(strtolower($item->welcomeMail->__toString()), array("true", "1"))) {
 					$course->setAutoNotification(false);
-				} elseif ((bool) $item->welcomeMail->__toString() == true || strtolower($item->welcomeMail->__toString()) == 'true') {
+				} elseif (in_array(strtolower($item->welcomeMail->__toString()), array("false", "0"))) {
 					$course->setAutoNotification(true);
-				}
-			}
-
-			//subscription time range: if there's no timeframe defined, leave the current/default timeframe,
-			//if it is defined but empty, unset the timeframe
-			if ($item->courseInscriptionTimeframe) {
-				if (!empty($item->courseInscriptionTimeframe)) {
-					$courseInscriptionTimeframe = $item->courseInscriptionTimeframe;
-					$course->setSubscriptionLimitationType(ilCourseConstants::SUBSCRIPTION_LIMITED);
-					$start = new ilDateTime($courseInscriptionTimeframe->courseInscriptionBeginningDate->__toString() . ' '
-					                        . $courseInscriptionTimeframe->courseInscriptionBeginningTime->__toString(), IL_CAL_DATETIME);
-					$course->setSubscriptionStart($start->getUnixTime());
-					$end = new ilDateTime($courseInscriptionTimeframe->courseInscriptionEndDate->__toString() . ' '
-					                      . $courseInscriptionTimeframe->courseInscriptionEndTime->__toString(), IL_CAL_DATETIME);
-					$course->setSubscriptionEnd($end->getUnixTime());
-				} else {
-					$course->setSubscriptionLimitationType(ilCourseConstants::SUBSCRIPTION_UNLIMITED);
 				}
 			}
 
@@ -275,14 +251,36 @@ class ilCourseImportGUI {
 			}
 
 
+			//direct registration
+			if (in_array(strtolower($item->directRegistration->__toString()), array("true", "1"))) {
+				$course->setSubscriptionType(IL_CRS_SUBSCRIPTION_DIRECT);
+				$course->setSubscriptionLimitationType(IL_CRS_SUBSCRIPTION_UNLIMITED);
+			} elseif (in_array(strtolower($item->directRegistration->__toString()), array("false", "0"))) {
+				$course->setSubscriptionType(IL_CRS_SUBSCRIPTION_DIRECT);
+				$course->setSubscriptionLimitationType(IL_CRS_SUBSCRIPTION_DEACTIVATED);
+			}
+
+			//subscription time range: if there's no timeframe defined, leave the current/default timeframe,
+			//if it is defined but empty, unset the timeframe
+			if ($item->courseInscriptionTimeframe) {
+				if (!empty($item->courseInscriptionTimeframe) && $course->getSubscriptionLimitationType() != IL_CRS_SUBSCRIPTION_DEACTIVATED) {
+					$courseInscriptionTimeframe = $item->courseInscriptionTimeframe;
+					$course->setSubscriptionLimitationType(ilCourseConstants::SUBSCRIPTION_LIMITED);
+					$start = new ilDateTime($courseInscriptionTimeframe->courseInscriptionBeginningDate->__toString() . ' '
+						. $courseInscriptionTimeframe->courseInscriptionBeginningTime->__toString(), IL_CAL_DATETIME);
+					$course->setSubscriptionStart($start->getUnixTime());
+					$end = new ilDateTime($courseInscriptionTimeframe->courseInscriptionEndDate->__toString() . ' '
+						. $courseInscriptionTimeframe->courseInscriptionEndTime->__toString(), IL_CAL_DATETIME);
+					$course->setSubscriptionEnd($end->getUnixTime());
+				}
+			}
+
 			//online
 			if (isset($item->online)) {
 				if ((bool) $item->online->__toString() == false || strtolower($item->online->__toString()) == 'false') {
 					$course->setOfflineStatus(true);
-					$course->update();
 				} elseif ((bool) $item->online->__toString() == true || strtolower($item->online->__toString()) == 'true') {
 					$course->setOfflineStatus(false);
-					$course->update();
 				}
 			}
 
@@ -295,13 +293,14 @@ class ilCourseImportGUI {
 					$course->setCourseStart($start);
 					$end = new ilDate($courseTimeframe->courseEndDate->__toString(), IL_CAL_DATE);
 					$course->setCourseEnd($end);
-					$course->update();
 				} else {
 					$course->setCourseStart(null);
 					$course->setCourseEnd(null);
-					$course->update();
 				}
 			}
+
+			$course->update();
+
 
 			//set course admins
 			$participants = ilCourseParticipants::_getInstanceByObjId($course->getId());

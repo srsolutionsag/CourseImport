@@ -82,38 +82,32 @@ class ilCourseImportExcelConverter {
 			if ($i > 8 || $dat === NULL) {
 				continue;
 			}
-			$course->addChild('ns1:ns1:' . $this->getMapping($i), $dat ? $dat : 0);
+			$course->addChild('ns1:ns1:' . $this->getMapping($i), $dat ? htmlspecialchars($dat) : 0);
 		}
 
 		$courseTimeframe = $course->addChild('ns1:ns1:courseTimeframe');
-		if ($array[9] || $array[10] || $array[11] || $array[12]) {
+		if ($array[9] || $array[10]) {
 			if ($array[9]) {
 				$courseTimeframe->addChild('ns1:ns1:' . $this->getMapping(9), date(self::DATE_FORMAT, strtotime(str_replace('/', '.', $array[9]))));
 			}
 			if ($array[10]) {
-				$courseTimeframe->addChild('ns1:ns1:' . $this->getMapping(10), date(self::TIME_FORMAT, strtotime(str_replace('/', '.', $array[10]))));
-			}
-			if ($array[11]) {
-				$courseTimeframe->addChild('ns1:ns1:' . $this->getMapping(11), date(self::DATE_FORMAT, strtotime(str_replace('/', '.', $array[11]))));
-			}
-			if ($array[12]) {
-				$courseTimeframe->addChild('ns1:ns1:' . $this->getMapping(12), date(self::TIME_FORMAT, strtotime(str_replace('/', '.', $array[12]))));
+				$courseTimeframe->addChild('ns1:ns1:' . $this->getMapping(10), date(self::DATE_FORMAT, strtotime(str_replace('/', '.', $array[10]))));
 			}
 		}
 
 		$courseInscriptionTimeframe = $course->addChild('ns1:ns1:courseInscriptionTimeframe');
-		if ($array[13] || $array[14] || $array[15] || $array[16]) {
+		if ($array[11] || $array[12] || $array[13] || $array[14]) {
+			if ($array[11]) {
+				$courseInscriptionTimeframe->addChild('ns1:ns1:' . $this->getMapping(11), date(self::DATE_FORMAT, strtotime(str_replace('/', '.', $array[11]))));
+			}
+			if ($array[12]) {
+				$courseInscriptionTimeframe->addChild('ns1:ns1:' . $this->getMapping(12), date(self::TIME_FORMAT, strtotime(str_replace('/', '.', $array[12]))));
+			}
 			if ($array[13]) {
 				$courseInscriptionTimeframe->addChild('ns1:ns1:' . $this->getMapping(13), date(self::DATE_FORMAT, strtotime(str_replace('/', '.', $array[13]))));
 			}
 			if ($array[14]) {
 				$courseInscriptionTimeframe->addChild('ns1:ns1:' . $this->getMapping(14), date(self::TIME_FORMAT, strtotime(str_replace('/', '.', $array[14]))));
-			}
-			if ($array[15]) {
-				$courseInscriptionTimeframe->addChild('ns1:ns1:' . $this->getMapping(15), date(self::DATE_FORMAT, strtotime(str_replace('/', '.', $array[15]))));
-			}
-			if ($array[16]) {
-				$courseInscriptionTimeframe->addChild('ns1:ns1:' . $this->getMapping(16), date(self::TIME_FORMAT, strtotime(str_replace('/', '.', $array[16]))));
 			}
 		}
 	}
@@ -151,13 +145,11 @@ class ilCourseImportExcelConverter {
 			7  => 'directRegistration',
 			8  => 'welcomeMail',
 			9  => 'courseBeginningDate',
-			10 => 'courseBeginningTime',
-			11 => 'courseEndDate',
-			12 => 'courseEndTime',
-			13 => 'courseInscriptionBeginningDate',
-			14 => 'courseInscriptionBeginningTime',
-			15 => 'courseInscriptionEndDate',
-			16 => 'courseInscriptionEndTime',
+			10 => 'courseEndDate',
+			11 => 'courseInscriptionBeginningDate',
+			12 => 'courseInscriptionBeginningTime',
+			13 => 'courseInscriptionEndDate',
+			14 => 'courseInscriptionEndTime',
 		);
 
 		return $map[$i];
@@ -179,13 +171,11 @@ class ilCourseImportExcelConverter {
 			7  => 'Direkte Registration?',
 			8  => 'Willkommens-Mail?',
 			9  => 'Kurs Startdatum',
-			10 => 'Kurs Startzeit',
-			11 => 'Kurs Enddatum',
-			12 => 'Kurs Endzeit',
-			13 => 'Kurs Einschreibung Startdatum',
-			14 => 'Kurs Einschreibung Startzeit',
-			15 => 'Kurs Einschreibung Enddatum',
-			16 => 'Kurs Einschreibung Endzeit',
+			10 => 'Kurs Enddatum',
+			11 => 'Kurs Einschreibung Startdatum',
+			12 => 'Kurs Einschreibung Startzeit',
+			13 => 'Kurs Einschreibung Enddatum',
+			14 => 'Kurs Einschreibung Endzeit',
 		);
 	}
 

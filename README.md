@@ -10,6 +10,9 @@ Das CourseImport Plugin ist ein UIHook Plugin für die E-Learning Plattform ILIA
 mehrerer Kurse durch Hochladen eines Excel- oder eines XML-Files. Die XML-Files weisen eine bestimmte Struktur vor, die zuerst durch
 ein XSD-File und zusätzlich durch das Plugin validiert wird, bevor die Kurse in ILIAS erzeugt werden.
 
+Beim erstellen eines Excel-Kursimports ist zu beachten, dass **der Zeitrahmen für die Kurseinschreibung ignoriert wird,
+falls keine direkte Registration ausgewählt wurde**.
+
 ###Documentation
 https://github.com/studer-raimann/CourseImport/raw/master/doc/Documentation_1_0_0.pdf
 

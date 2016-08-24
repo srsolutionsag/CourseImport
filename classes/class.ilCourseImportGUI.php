@@ -185,7 +185,7 @@ class ilCourseImportGUI {
 					break;
 			}
 
-			ilUtil::sendSuccess(sprintf($this->pl->txt(self::IMPORT_SUCCEEDED), $this->courses['created'], $this->courses['updated'], $this->courses['refs']));
+			ilUtil::sendSuccess(sprintf($this->pl->txt(self::IMPORT_SUCCEEDED), $this->courses['created'], $this->courses['updated'], $this->courses['refs'], $this->courses['refs_del']));
 		}
 
 		$this->view();
@@ -225,9 +225,9 @@ class ilCourseImportGUI {
 			//welcome mail
 			if (isset($item->welcomeMail)) {
 				if (in_array(strtolower($item->welcomeMail->__toString()), array("true", "1"))) {
-					$course->setAutoNotification(false);
-				} elseif (in_array(strtolower($item->welcomeMail->__toString()), array("false", "0"))) {
 					$course->setAutoNotification(true);
+				} elseif (in_array(strtolower($item->welcomeMail->__toString()), array("false", "0"))) {
+					$course->setAutoNotification(false);
 				}
 			}
 
@@ -321,21 +321,42 @@ class ilCourseImportGUI {
 			$course->setOwner(ilObjUser::_lookupId($admins[0]));
 			$course->updateOwner();
 
-			//create references
-			if ($item->references) {
-				foreach (explode(',', $item->references->__toString()) as $parent_id) {
-					$course_ref = new ilObjCourseReference();
 
-					$course_ref->create();
-					$course_ref->createReference();
+			// create references
 
-					$course_ref->putInTree($parent_id);
-
-					$course_ref->setTargetid($course->getId());
-					$course_ref->update();
-					$this->courses['refs'] .= ilObject2::_lookupTitle(ilObject2::_lookupObjId($parent_id)) . ' - '
-					                          . ilObject2::_lookupTitle($course_ref->getTargetId()) . '<br>';
+			if ($item->references->__toString()) {
+				$new_references = explode(',', $item->references->__toString());
+			} else {
+				$new_references = array();
+			}
+			// delete existing, not delivered references
+			if ($item->refId->__toString()) {
+				$existing_references = ilObjCourseReference::_lookupSourceIds($course->getId());
+				foreach ($existing_references as $key => $obj_id) {
+					$parent_id = $this->tree->getParentId(array_shift(ilObjCourseReference::_getAllReferences($obj_id)));
+					if (in_array($parent_id, $new_references)) {
+						unset($new_references[array_search($parent_id, $new_references)]);
+					} else {
+						$course_ref = new ilObjCourseReference($obj_id, false);
+						$course_ref->delete();
+						$this->courses['refs_del'] .= ilObject2::_lookupTitle(ilObject2::_lookupObjId($parent_id)) . ' - '
+							. $course->getTitle() . '<br>';
+					}
 				}
+			}
+
+			foreach ($new_references as $parent_id) {
+				$course_ref = new ilObjCourseReference();
+
+				$course_ref->create();
+				$course_ref->createReference();
+
+				$course_ref->putInTree($parent_id);
+
+				$course_ref->setTargetid($course->getId());
+				$course_ref->update();
+				$this->courses['refs'] .= ilObject2::_lookupTitle(ilObject2::_lookupObjId($parent_id)) . ' - '
+					. $course->getTitle() . '<br>';
 			}
 		}
 	}

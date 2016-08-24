@@ -14,5 +14,5 @@ error_timeframe#:#Activation Timeframe is incomplete for course: %s<br>
 error_inscription#:#Inscription Timeframe is incomplete for course: %s<br>
 error_not_category#:#Object with Ref-ID (hierarchy) is not of type category: %s<br>
 error_container_ref#:#Object with Ref-ID (references) is not of type container: %s<br>
-import_succeeded#:#Courses created:<br>%s<br>Courses updated:<br>%s<br>Course-references created:<br>%s
+import_succeeded#:#Courses created:<br>%s<br>Courses updated:<br>%s<br>Course-references created:<br>%s<br>Course-references deleted:<br>%s
 import_failed#:#Course import failed. The validation exited with the following error messages:<br><br>

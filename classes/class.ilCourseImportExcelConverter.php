@@ -10,6 +10,7 @@ class ilCourseImportExcelConverter {
 
 	const DATE_FORMAT = 'Y-m-d';
 	const TIME_FORMAT = 'H:i:s';
+	const ERROR_FILESIZE = 'error_large_file';
 	/**
 	 * @var string
 	 */
@@ -37,6 +38,10 @@ class ilCourseImportExcelConverter {
 	public function convert() {
 		if (!$this->uploaded_file || !is_file($this->uploaded_file)) {
 			throw new ilException('no valid file');
+		}
+
+		if (filesize($this->uploaded_file) > 120000) {
+			return self::ERROR_FILESIZE;
 		}
 
 		$objPHPExcel = PHPExcel_IOFactory::load($this->uploaded_file);
@@ -77,6 +82,10 @@ class ilCourseImportExcelConverter {
 	 * @param array $array
 	 */
 	protected function appendCourseArrayAsElement(SimpleXMLElement &$xml, array $array) {
+		if (!$array[1]) {
+			return;
+		}
+
 		$course = $xml->addChild('ns1:ns1:course', null);
 		foreach ($array as $i => $dat) {
 			if ($i > 8 || $dat === NULL) {

@@ -180,7 +180,11 @@ class ilCourseImportGUI {
 				case self::TYPE_XLSX:
 					require_once('class.ilCourseImportExcelConverter.php');
 					$ilCourseImportExcelConverter = new ilCourseImportExcelConverter($uploaded_file);
-					$ilCourseImportExcelConverter->convert();
+					$error = $ilCourseImportExcelConverter->convert();
+					if ($error) {
+						ilUtil::sendFailure($this->pl->txt($error), true);
+						$this->ctrl->redirect($this);
+					}
 					$this->createCoursesFromXMLString($ilCourseImportExcelConverter->getXmlText());
 					break;
 			}

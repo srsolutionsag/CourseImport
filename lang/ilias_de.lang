@@ -14,5 +14,6 @@ error_timeframe#:#Aktivierungszeitfenster unvollständig bei Kurs: %s<br>
 error_inscription#:#Anmeldungszeitfenster unvollständig bei Kurs: %s<br>
 error_not_category#:#Objekt mit Ref-ID (hierarchy) ist nicht vom Typ "Kategorie": %s<br>
 error_container_ref#:#Objekt mit Ref-ID (references) ist nicht vom Typ "Container": %s<br>
+error_large_file#:#Die hochgeladene Datei ist ungewöhnlich gross. Bitte überprüfen Sie, ob sich nach den gefüllte Zeilen der Excel-Datei noch leere Zeilen befinden und löschen Sie diese gegebenfalls.
 import_succeeded#:#Kurse neu angelegt:<br>%s<br>Kurse aktualisiert:<br>%s<br>Kurs-Referenzen angelegt:<br>%s<br>Kurs-Referenzen gelöscht:<br>%s
 import_failed#:#Importieren der Kurse fehlgeschlagen. Die Validierung ergab folgende Fehlermeldungen:<br><br>

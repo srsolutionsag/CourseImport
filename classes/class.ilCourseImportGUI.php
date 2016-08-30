@@ -325,7 +325,11 @@ class ilCourseImportGUI {
 			// create references
 
 			if ($item->references->__toString()) {
-				$new_references = explode(',', $item->references->__toString());
+				if (strpos($item->references->__toString(), '.')) {
+					$new_references = explode('.', $item->references->__toString());
+				} else {
+					$new_references = explode(',', $item->references->__toString());
+				}
 			} else {
 				$new_references = array();
 			}

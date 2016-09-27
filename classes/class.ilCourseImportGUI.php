@@ -362,6 +362,8 @@ class ilCourseImportGUI {
 				$course_ref->putInTree($parent_id);
 
 				$course_ref->setTargetid($course->getId());
+				$course_ref->setPermissions($parent_id);
+
 				$course_ref->update();
 				$this->courses['refs'] .= ilObject2::_lookupTitle(ilObject2::_lookupObjId($parent_id)) . ' - '
 					. $course->getTitle() . '<br>';

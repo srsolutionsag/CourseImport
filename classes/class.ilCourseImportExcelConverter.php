@@ -88,35 +88,42 @@ class ilCourseImportExcelConverter {
 
 		$course = $xml->addChild('ns1:ns1:course', null);
 		foreach ($array as $i => $dat) {
-			if ($i > 8 || $dat === NULL) {
+			if ($i > 8 || $dat === null) {
 				continue;
 			}
-			$course->addChild('ns1:ns1:' . $this->getMapping($i), $dat ? htmlspecialchars($dat) : 0);
+			$course->addChild('ns1:ns1:'
+			                  . $this->getMapping($i), $dat ? htmlspecialchars($dat) : 0);
 		}
 
 		$courseTimeframe = $course->addChild('ns1:ns1:courseTimeframe');
 		if ($array[9] || $array[10]) {
 			if ($array[9]) {
-				$courseTimeframe->addChild('ns1:ns1:' . $this->getMapping(9), date(self::DATE_FORMAT, strtotime(str_replace('/', '.', $array[9]))));
+				$courseTimeframe->addChild('ns1:ns1:'
+				                           . $this->getMapping(9), date(self::DATE_FORMAT, strtotime(str_replace('/', '.', $array[9]))));
 			}
 			if ($array[10]) {
-				$courseTimeframe->addChild('ns1:ns1:' . $this->getMapping(10), date(self::DATE_FORMAT, strtotime(str_replace('/', '.', $array[10]))));
+				$courseTimeframe->addChild('ns1:ns1:'
+				                           . $this->getMapping(10), date(self::DATE_FORMAT, strtotime(str_replace('/', '.', $array[10]))));
 			}
 		}
 
 		$courseInscriptionTimeframe = $course->addChild('ns1:ns1:courseInscriptionTimeframe');
 		if ($array[11] || $array[12] || $array[13] || $array[14]) {
 			if ($array[11]) {
-				$courseInscriptionTimeframe->addChild('ns1:ns1:' . $this->getMapping(11), date(self::DATE_FORMAT, strtotime(str_replace('/', '.', $array[11]))));
+				$courseInscriptionTimeframe->addChild('ns1:ns1:'
+				                                      . $this->getMapping(11), date(self::DATE_FORMAT, strtotime(str_replace('/', '.', $array[11]))));
 			}
 			if ($array[12]) {
-				$courseInscriptionTimeframe->addChild('ns1:ns1:' . $this->getMapping(12), date(self::TIME_FORMAT, strtotime(str_replace('/', '.', $array[12]))));
+				$courseInscriptionTimeframe->addChild('ns1:ns1:'
+				                                      . $this->getMapping(12), date(self::TIME_FORMAT, strtotime(str_replace('/', '.', $array[12]))));
 			}
 			if ($array[13]) {
-				$courseInscriptionTimeframe->addChild('ns1:ns1:' . $this->getMapping(13), date(self::DATE_FORMAT, strtotime(str_replace('/', '.', $array[13]))));
+				$courseInscriptionTimeframe->addChild('ns1:ns1:'
+				                                      . $this->getMapping(13), date(self::DATE_FORMAT, strtotime(str_replace('/', '.', $array[13]))));
 			}
 			if ($array[14]) {
-				$courseInscriptionTimeframe->addChild('ns1:ns1:' . $this->getMapping(14), date(self::TIME_FORMAT, strtotime(str_replace('/', '.', $array[14]))));
+				$courseInscriptionTimeframe->addChild('ns1:ns1:'
+				                                      . $this->getMapping(14), date(self::TIME_FORMAT, strtotime(str_replace('/', '.', $array[14]))));
 			}
 		}
 	}

@@ -180,12 +180,16 @@ class ilCourseImportGUI {
 				case self::TYPE_XLSX:
 					require_once('class.ilCourseImportExcelConverter.php');
 					$ilCourseImportExcelConverter = new ilCourseImportExcelConverter($uploaded_file);
-					$ilCourseImportExcelConverter->convert();
+					$error = $ilCourseImportExcelConverter->convert();
+					if ($error) {
+						ilUtil::sendFailure($this->pl->txt($error), true);
+						$this->ctrl->redirect($this);
+					}
 					$this->createCoursesFromXMLString($ilCourseImportExcelConverter->getXmlText());
 					break;
 			}
 
-			ilUtil::sendSuccess(sprintf($this->pl->txt(self::IMPORT_SUCCEEDED), $this->courses['created'], $this->courses['updated'], $this->courses['refs']));
+			ilUtil::sendSuccess(sprintf($this->pl->txt(self::IMPORT_SUCCEEDED), $this->courses['created'], $this->courses['updated'], $this->courses['refs'], $this->courses['refs_del']));
 		}
 
 		$this->view();
@@ -215,51 +219,19 @@ class ilCourseImportGUI {
 
 		// Run
 		foreach ($data->children(self::XML_PREFIX, true) as $item) {
-			$course = new ilObjCourse($item->refId);
+			$ref_id = $item->refId->__toString() ? (int) $item->refId->__toString() : 0;
+			$course = new ilObjCourse($ref_id);
 			$course->setTitle($item->title->__toString());
 			if ($description = $item->description->__toString()) {
 				$course->setDescription($description);
 			}
 
-			//online
-			if (isset($item->online)) {
-				if ($item->online == 'false') {
-					$course->setOfflineStatus(true);
-				} elseif ($item->online == 'true') {
-					$course->setOfflineStatus(false);
-				}
-			}
-
-			//direct registration
-			if ($item->directRegistration == "true") {
-				$course->setSubscriptionType(IL_CRS_SUBSCRIPTION_DIRECT);
-			} elseif ($item->directRegistration == "false") {
-				$course->setSubscriptionType(IL_CRS_SUBSCRIPTION_DEACTIVATED);
-			}
-
 			//welcome mail
 			if (isset($item->welcomeMail)) {
-				if ($item->welcomeMail == 'false') {
-					$course->setAutoNotification(false);
-				} elseif ($item->welcomeMail == 'true') {
+				if (in_array(strtolower($item->welcomeMail->__toString()), array("true", "1"))) {
 					$course->setAutoNotification(true);
-				}
-			}
-
-			//subscription time range: if there's no timeframe defined, leave the current/default timeframe,
-			//if it is defined but empty, unset the timeframe
-			if ($item->courseInscriptionTimeframe) {
-				if (!empty($item->courseInscriptionTimeframe)) {
-					$courseInscriptionTimeframe = $item->courseInscriptionTimeframe;
-					$course->setSubscriptionLimitationType(ilCourseConstants::SUBSCRIPTION_LIMITED);
-					$start = new ilDateTime($courseInscriptionTimeframe->courseInscriptionBeginningDate->__toString() . ' '
-					                        . $courseInscriptionTimeframe->courseInscriptionBeginningTime->__toString(), IL_CAL_DATETIME);
-					$course->setSubscriptionStart($start->getUnixTime());
-					$end = new ilDateTime($courseInscriptionTimeframe->courseInscriptionEndDate->__toString() . ' '
-					                      . $courseInscriptionTimeframe->courseInscriptionEndTime->__toString(), IL_CAL_DATETIME);
-					$course->setSubscriptionEnd($end->getUnixTime());
-				} else {
-					$course->setSubscriptionLimitationType(ilCourseConstants::SUBSCRIPTION_UNLIMITED);
+				} elseif (in_array(strtolower($item->welcomeMail->__toString()), array("false", "0"))) {
+					$course->setAutoNotification(false);
 				}
 			}
 
@@ -282,24 +254,57 @@ class ilCourseImportGUI {
 				$this->courses['created'] .= ilObject2::_lookupTitle(ilObject2::_lookupObjId($hierarchy_id)) . ' - ' . $course->getTitle() . '<br>';
 			}
 
+
+			//direct registration
+			if (in_array(strtolower($item->directRegistration->__toString()), array("true", "1"))) {
+				$course->setSubscriptionType(IL_CRS_SUBSCRIPTION_DIRECT);
+				$course->setSubscriptionLimitationType(IL_CRS_SUBSCRIPTION_UNLIMITED);
+			} elseif (in_array(strtolower($item->directRegistration->__toString()), array("false", "0"))) {
+				$course->setSubscriptionType(IL_CRS_SUBSCRIPTION_DIRECT);
+				$course->setSubscriptionLimitationType(IL_CRS_SUBSCRIPTION_DEACTIVATED);
+			}
+
+			//subscription time range: if there's no timeframe defined, leave the current/default timeframe,
+			//if it is defined but empty, unset the timeframe
+			if ($item->courseInscriptionTimeframe) {
+				if (!empty($item->courseInscriptionTimeframe) && $course->getSubscriptionLimitationType() != IL_CRS_SUBSCRIPTION_DEACTIVATED) {
+					$courseInscriptionTimeframe = $item->courseInscriptionTimeframe;
+					$course->setSubscriptionLimitationType(ilCourseConstants::SUBSCRIPTION_LIMITED);
+					$start = new ilDateTime($courseInscriptionTimeframe->courseInscriptionBeginningDate->__toString() . ' '
+						. $courseInscriptionTimeframe->courseInscriptionBeginningTime->__toString(), IL_CAL_DATETIME);
+					$course->setSubscriptionStart($start->getUnixTime());
+					$end = new ilDateTime($courseInscriptionTimeframe->courseInscriptionEndDate->__toString() . ' '
+						. $courseInscriptionTimeframe->courseInscriptionEndTime->__toString(), IL_CAL_DATETIME);
+					$course->setSubscriptionEnd($end->getUnixTime());
+				}
+			}
+
+			//online
+			if (isset($item->online)) {
+				if ((bool) $item->online->__toString() == false || strtolower($item->online->__toString()) == 'false') {
+					$course->setOfflineStatus(true);
+				} elseif ((bool) $item->online->__toString() == true || strtolower($item->online->__toString()) == 'true') {
+					$course->setOfflineStatus(false);
+				}
+			}
+
 			//course time range:  if there's no timeframe defined, leave the current/default timeframe,
 			//if it is defined but empty, unset the timeframe
 			if ($item->courseTimeframe) {
 				if (!empty($item->courseTimeframe)) {
-					$course->setActivationType(IL_CRS_ACTIVATION_LIMITED);
 					$courseTimeframe = $item->courseTimeframe;
 					$start = new ilDate($courseTimeframe->courseBeginningDate->__toString(), IL_CAL_DATE);
 					$course->setCourseStart($start);
 					$end = new ilDate($courseTimeframe->courseEndDate->__toString(), IL_CAL_DATE);
 					$course->setCourseEnd($end);
-					$course->update();
 				} else {
-					$course->setActivationType(IL_CRS_ACTIVATION_UNLIMITED);
 					$course->setCourseStart(null);
 					$course->setCourseEnd(null);
-					$course->update();
 				}
 			}
+
+			$course->update();
+
 
 			//set course admins
 			$participants = ilCourseParticipants::_getInstanceByObjId($course->getId());
@@ -320,21 +325,48 @@ class ilCourseImportGUI {
 			$course->setOwner(ilObjUser::_lookupId($admins[0]));
 			$course->updateOwner();
 
-			//create references
-			if ($item->references) {
-				foreach (explode(',', $item->references->__toString()) as $parent_id) {
-					$course_ref = new ilObjCourseReference();
 
-					$course_ref->create();
-					$course_ref->createReference();
+			// create references
 
-					$course_ref->putInTree($parent_id);
-
-					$course_ref->setTargetid($course->getId());
-					$course_ref->update();
-					$this->courses['refs'] .= ilObject2::_lookupTitle(ilObject2::_lookupObjId($parent_id)) . ' - '
-					                          . ilObject2::_lookupTitle($course_ref->getTargetId()) . '<br>';
+			if ($item->references->__toString()) {
+				if (strpos($item->references->__toString(), '.')) {
+					$new_references = explode('.', $item->references->__toString());
+				} else {
+					$new_references = explode(',', $item->references->__toString());
 				}
+			} else {
+				$new_references = array();
+			}
+			// delete existing, not delivered references
+			if ($item->refId->__toString()) {
+				$existing_references = ilObjCourseReference::_lookupSourceIds($course->getId());
+				foreach ($existing_references as $key => $obj_id) {
+					$parent_id = $this->tree->getParentId(array_shift(ilObjCourseReference::_getAllReferences($obj_id)));
+					if (in_array($parent_id, $new_references)) {
+						unset($new_references[array_search($parent_id, $new_references)]);
+					} else {
+						$course_ref = new ilObjCourseReference($obj_id, false);
+						$course_ref->delete();
+						$this->courses['refs_del'] .= ilObject2::_lookupTitle(ilObject2::_lookupObjId($parent_id)) . ' - '
+							. $course->getTitle() . '<br>';
+					}
+				}
+			}
+
+			foreach ($new_references as $parent_id) {
+				$course_ref = new ilObjCourseReference();
+
+				$course_ref->create();
+				$course_ref->createReference();
+
+				$course_ref->putInTree($parent_id);
+
+				$course_ref->setTargetid($course->getId());
+				$course_ref->setPermissions($parent_id);
+
+				$course_ref->update();
+				$this->courses['refs'] .= ilObject2::_lookupTitle(ilObject2::_lookupObjId($parent_id)) . ' - '
+					. $course->getTitle() . '<br>';
 			}
 		}
 	}

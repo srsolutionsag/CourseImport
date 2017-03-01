@@ -122,7 +122,12 @@ class ilCourseImportValidator {
 
 			//existing parent id for references
 			if (isset($item->references)) {
-				foreach (explode(',', $item->references->__toString()) as $ref) {
+				if (strpos($item->references->__toString(), '.')) {
+					$references = explode('.', $item->references->__toString());
+				} else {
+					$references = explode(',', $item->references->__toString());
+				}
+				foreach ($references as $ref) {
 					if (!ilObject2::_exists($ref, true)) {
 						$this->last_error .= sprintf($this->pl->txt(self::ERROR_PARENT_FOR_REFERENCE_NOT_FOUND), $ref);
 					} else {

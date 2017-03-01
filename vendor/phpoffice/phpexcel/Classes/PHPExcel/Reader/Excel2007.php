@@ -1314,56 +1314,56 @@ class PHPExcel_Reader_Excel2007 extends PHPExcel_Reader_Abstract implements PHPE
 								}
 
 								// Loop through VML comments
-							    foreach ($vmlComments as $relName => $relPath) {
-									// Load VML comments file
-									$relPath = PHPExcel_Shared_File::realpath(dirname("$dir/$fileWorksheet") . "/" . $relPath);
-									$vmlCommentsFile = simplexml_load_string($this->securityScan($this->_getFromZipArchive($zip, $relPath)), 'SimpleXMLElement', PHPExcel_Settings::getLibXmlLoaderOptions());
-									$vmlCommentsFile->registerXPathNamespace('v', 'urn:schemas-microsoft-com:vml');
-
-									$shapes = $vmlCommentsFile->xpath('//v:shape');
-									foreach ($shapes as $shape) {
-										$shape->registerXPathNamespace('v', 'urn:schemas-microsoft-com:vml');
-
-										if (isset($shape['style'])) {
-	    									$style        = (string)$shape['style'];
-	    									$fillColor    = strtoupper( substr( (string)$shape['fillcolor'], 1 ) );
-	    									$column       = null;
-	    									$row          = null;
-
-	    									$clientData   = $shape->xpath('.//x:ClientData');
-	    									if (is_array($clientData) && !empty($clientData)) {
-	        									$clientData   = $clientData[0];
-
-	        									if ( isset($clientData['ObjectType']) && (string)$clientData['ObjectType'] == 'Note' ) {
-	        									    $temp = $clientData->xpath('.//x:Row');
-	        									    if (is_array($temp)) $row = $temp[0];
-
-	        									    $temp = $clientData->xpath('.//x:Column');
-	        									    if (is_array($temp)) $column = $temp[0];
-	        									}
-	    									}
-
-	    									if (($column !== NULL) && ($row !== NULL)) {
-	    									    // Set comment properties
-	    									    $comment = $docSheet->getCommentByColumnAndRow((string) $column, $row + 1);
-	    									    $comment->getFillColor()->setRGB( $fillColor );
-
-	    									    // Parse style
-	    									    $styleArray = explode(';', str_replace(' ', '', $style));
-	    									    foreach ($styleArray as $stylePair) {
-	    									        $stylePair = explode(':', $stylePair);
-
-	    									        if ($stylePair[0] == 'margin-left')     $comment->setMarginLeft($stylePair[1]);
-	    									        if ($stylePair[0] == 'margin-top')      $comment->setMarginTop($stylePair[1]);
-	    									        if ($stylePair[0] == 'width')           $comment->setWidth($stylePair[1]);
-	    									        if ($stylePair[0] == 'height')          $comment->setHeight($stylePair[1]);
-	    									        if ($stylePair[0] == 'visibility')      $comment->setVisible( $stylePair[1] == 'visible' );
-
-	    									    }
-	    									}
-										}
-									}
-								}
+//							    foreach ($vmlComments as $relName => $relPath) {
+//									// Load VML comments file
+//									$relPath = PHPExcel_Shared_File::realpath(dirname("$dir/$fileWorksheet") . "/" . $relPath);
+//									$vmlCommentsFile = simplexml_load_string($this->securityScan($this->_getFromZipArchive($zip, $relPath)), 'SimpleXMLElement', PHPExcel_Settings::getLibXmlLoaderOptions());
+//									$vmlCommentsFile->registerXPathNamespace('v', 'urn:schemas-microsoft-com:vml');
+//
+//									$shapes = $vmlCommentsFile->xpath('//v:shape');
+//									foreach ($shapes as $shape) {
+//										$shape->registerXPathNamespace('v', 'urn:schemas-microsoft-com:vml');
+//
+//										if (isset($shape['style'])) {
+//	    									$style        = (string)$shape['style'];
+//	    									$fillColor    = strtoupper( substr( (string)$shape['fillcolor'], 1 ) );
+//	    									$column       = null;
+//	    									$row          = null;
+//
+//	    									$clientData   = $shape->xpath('.//x:ClientData');
+//	    									if (is_array($clientData) && !empty($clientData)) {
+//	        									$clientData   = $clientData[0];
+//
+//	        									if ( isset($clientData['ObjectType']) && (string)$clientData['ObjectType'] == 'Note' ) {
+//	        									    $temp = $clientData->xpath('.//x:Row');
+//	        									    if (is_array($temp)) $row = $temp[0];
+//
+//	        									    $temp = $clientData->xpath('.//x:Column');
+//	        									    if (is_array($temp)) $column = $temp[0];
+//	        									}
+//	    									}
+//
+//	    									if (($column !== NULL) && ($row !== NULL)) {
+//	    									    // Set comment properties
+//	    									    $comment = $docSheet->getCommentByColumnAndRow((string) $column, $row + 1);
+//	    									    $comment->getFillColor()->setRGB( $fillColor );
+//
+//	    									    // Parse style
+//	    									    $styleArray = explode(';', str_replace(' ', '', $style));
+//	    									    foreach ($styleArray as $stylePair) {
+//	    									        $stylePair = explode(':', $stylePair);
+//
+//	    									        if ($stylePair[0] == 'margin-left')     $comment->setMarginLeft($stylePair[1]);
+//	    									        if ($stylePair[0] == 'margin-top')      $comment->setMarginTop($stylePair[1]);
+//	    									        if ($stylePair[0] == 'width')           $comment->setWidth($stylePair[1]);
+//	    									        if ($stylePair[0] == 'height')          $comment->setHeight($stylePair[1]);
+//	    									        if ($stylePair[0] == 'visibility')      $comment->setVisible( $stylePair[1] == 'visible' );
+//
+//	    									    }
+//	    									}
+//										}
+//									}
+//								}
 
 								// Header/footer images
 								if ($xmlSheet && $xmlSheet->legacyDrawingHF && !$this->_readDataOnly) {

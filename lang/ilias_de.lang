@@ -1,7 +1,7 @@
-tab_course_import#:#XML Kurs-Import
+tab_course_import#:#Excel-/XML-Kursimport
 back#:#Zurück
-form_title#:#XML Kurs-Import
-file_input#:#XML Datei Hochladen
+form_title#:#Excel-/XML-Kursimport
+file_input#:#Excel-/XML-Datei Hochladen
 import_courses#:#Kurse Importieren
 error_xsd#:#XSD Validierung: <br>%s<br>Line: %s<br><br>
 error_ilias#:#ILIAS Validierung: <br>
@@ -14,5 +14,6 @@ error_timeframe#:#Aktivierungszeitfenster unvollständig bei Kurs: %s<br>
 error_inscription#:#Anmeldungszeitfenster unvollständig bei Kurs: %s<br>
 error_not_category#:#Objekt mit Ref-ID (hierarchy) ist nicht vom Typ "Kategorie": %s<br>
 error_container_ref#:#Objekt mit Ref-ID (references) ist nicht vom Typ "Container": %s<br>
-import_succeeded#:#Kurse neu angelegt:<br>%s<br>Kurse aktualisiert:<br>%s<br>Kurs-Referenzen angelegt:<br>%s
+error_large_file#:#Die hochgeladene Datei ist ungewöhnlich gross. Bitte überprüfen Sie, ob sich nach den gefüllte Zeilen der Excel-Datei noch leere Zeilen befinden und löschen Sie diese gegebenfalls.
+import_succeeded#:#Kurse neu angelegt:<br>%s<br>Kurse aktualisiert:<br>%s<br>Kurs-Referenzen angelegt:<br>%s<br>Kurs-Referenzen gelöscht:<br>%s
 import_failed#:#Importieren der Kurse fehlgeschlagen. Die Validierung ergab folgende Fehlermeldungen:<br><br>

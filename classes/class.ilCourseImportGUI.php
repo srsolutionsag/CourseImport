@@ -308,9 +308,9 @@ class ilCourseImportGUI {
 
 			//set course admins
 			$participants = ilCourseParticipants::_getInstanceByObjId($course->getId());
-			$admins = $item->courseAdmins->__toString() ? explode(',', $item->courseAdmins->__toString()) : array();
+			$admins = $item->courseAdmins->__toString() ? explode(',', str_replace(" ", "", $item->courseAdmins->__toString())) : array();
 			$admin_ids = array();
-			foreach ($admins as $a) {
+			foreach (array_filter($admins) as $a) {
 				$admin_ids[] = ilObjUser::_lookupId($a);
 			}
 			$existing_admins = $participants->getAdmins();
@@ -327,13 +327,14 @@ class ilCourseImportGUI {
 
 
 			// create references
-
-			if ($item->references->__toString()) {
-				if (strpos($item->references->__toString(), '.')) {
-					$new_references = explode('.', $item->references->__toString());
+			$references_string = str_replace(" ", "", $item->references->__toString());
+			if ($references_string) {
+				if (strpos($references_string, '.')) {
+					$new_references = explode('.', $references_string);
 				} else {
-					$new_references = explode(',', $item->references->__toString());
+					$new_references = explode(',', $references_string);
 				}
+				$new_references = array_filter($new_references);
 			} else {
 				$new_references = array();
 			}

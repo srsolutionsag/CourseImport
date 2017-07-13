@@ -73,9 +73,16 @@ class ilCourseImportValidator {
 		$this->last_error = '';
 		$xml = new DOMDocument();
 		$xml->loadXML($this->xml->asXML());
-		if (!$xml->schemaValidate(self::XSD_FILEPATH)) {
-			$this->last_error .= sprintf($this->pl->txt(self::ERROR_XSD_VALIDATION), libxml_get_last_error()->message, libxml_get_last_error()->line);
+		try {
+			if (!$xml->schemaValidate(self::XSD_FILEPATH)) {
+				$this->last_error .= sprintf($this->pl->txt(self::ERROR_XSD_VALIDATION), libxml_get_last_error()->message);
+				$this->last_error .= $this->pl->txt(self::ERROR_ILIAS_VALIDATION);
+			}
+		} catch (Exception $e) {
+			$this->last_error .= sprintf($this->pl->txt(self::ERROR_XSD_VALIDATION), libxml_get_last_error()->message);
+			$this->last_error .= $e->getMessage() . "<br><br>";
 			$this->last_error .= $this->pl->txt(self::ERROR_ILIAS_VALIDATION);
+
 		}
 
 		$this->validateIliasSpecific();
@@ -92,8 +99,9 @@ class ilCourseImportValidator {
 		$data = $this->xml;
 		foreach ($data->children(self::XML_PREFIX, true) as $item) {
 			//admin login exists in ilias
-			if ($item->courseAdmins->__toString()) {
-				foreach (explode(',', $item->courseAdmins->__toString()) as $admin) {
+			$course_admins_string = str_replace(" ", "", $item->courseAdmins->__toString());
+			if ($course_admins_string) {
+				foreach (array_filter(explode(',', $course_admins_string)) as $admin) {
 					if (!ilObjUser::_loginExists($admin)) {
 						$this->last_error .= sprintf($this->pl->txt(self::ERROR_ADMIN_NOT_FOUND), $admin);
 					}
@@ -122,12 +130,17 @@ class ilCourseImportValidator {
 
 			//existing parent id for references
 			if (isset($item->references)) {
-				if (strpos($item->references->__toString(), '.')) {
-					$references = explode('.', $item->references->__toString());
+				$references_string = str_replace(" ", "", $item->references->__toString());
+				if (strpos($references_string, '.')) {
+					$references = explode('.', $references_string);
 				} else {
-					$references = explode(',', $item->references->__toString());
+					$references = explode(',', $references_string);
 				}
+				$references = array_filter($references);
 				foreach ($references as $ref) {
+					if (!$ref) {
+						continue;
+					}
 					if (!ilObject2::_exists($ref, true)) {
 						$this->last_error .= sprintf($this->pl->txt(self::ERROR_PARENT_FOR_REFERENCE_NOT_FOUND), $ref);
 					} else {

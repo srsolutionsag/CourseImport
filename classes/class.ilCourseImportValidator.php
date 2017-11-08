@@ -170,16 +170,19 @@ class ilCourseImportValidator {
 
 			if (!empty($item->courseInscriptionTimeframe)) {
 				$courseInscriptionTimeframe = $item->courseInscriptionTimeframe;
-				if (!$courseInscriptionTimeframe->courseInscriptionBeginningDate || !$courseInscriptionTimeframe->courseInscriptionBeginningTime
+				if (!$courseInscriptionTimeframe->courseInscriptionBeginningDate
+				    || !$courseInscriptionTimeframe->courseInscriptionBeginningTime
 				    || !$courseInscriptionTimeframe->courseInscriptionEndDate
 				    || !$courseInscriptionTimeframe->courseInscriptionEndTime
 				) {
 					$this->last_error .= sprintf($this->pl->txt(self::ERROR_INSCRIPTION_TIMEFRAME_INCOMPLETE), $item->title);
 				} else {
 					//check if beginning is before end
-					$beginning = new ilDateTime($courseInscriptionTimeframe->courseInscriptionBeginningDate->__toString() . ' '
+					$beginning = new ilDateTime($courseInscriptionTimeframe->courseInscriptionBeginningDate->__toString()
+					                            . ' '
 					                            . $courseInscriptionTimeframe->courseInscriptionBeginningTime->__toString(), IL_CAL_DATETIME);
-					$end = new ilDateTime($courseInscriptionTimeframe->courseInscriptionEndDate->__toString() . ' '
+					$end = new ilDateTime($courseInscriptionTimeframe->courseInscriptionEndDate->__toString()
+					                      . ' '
 					                      . $courseInscriptionTimeframe->courseInscriptionEndTime->__toString(), IL_CAL_DATETIME);
 					if (!ilDateTime::_before($beginning, $end)) {
 						$this->last_error .= sprintf($this->pl->txt(self::ERROR_INSCRIPTION_BEGINNING_BEFORE_END), $item->title);

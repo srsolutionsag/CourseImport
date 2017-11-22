@@ -214,19 +214,20 @@ class ilCourseImportGUI {
 		if ($last_error = $validator->getLastError()) {
 			ilUtil::sendFailure($this->pl->txt(self::IMPORT_FAILED) . $last_error, true);
 			$this->ctrl->redirect($this, 'view');
-			exit;
 		}
 
 		// Run
 		foreach ($data->children(self::XML_PREFIX, true) as $item) {
 			$ref_id = $item->refId->__toString() ? (int)$item->refId->__toString() : 0;
 			$course = new ilObjCourse($ref_id);
+
+			// set title
 			$course->setTitle($item->title->__toString());
 			if ($description = $item->description->__toString()) {
 				$course->setDescription($description);
 			}
 
-			//welcome mail
+			// set "welcome mail"
 			if (isset($item->welcomeMail)) {
 				if (in_array(strtolower($item->welcomeMail->__toString()), array( "true", "1" ))) {
 					$course->setAutoNotification(true);
@@ -238,9 +239,9 @@ class ilCourseImportGUI {
 				}
 			}
 
-			//create/update
+			// create/update
 			$hierarchy_id = (int)$item->hierarchy;
-			if ($ref_id = $course->getRefId()) {
+			if ($ref_id = $course->getRefId()) {    // update
 				$course->update();
 				$parent_id = $this->tree->getParentId($ref_id);
 				if ($parent_id != $hierarchy_id) {
@@ -250,7 +251,7 @@ class ilCourseImportGUI {
 				}
 				$this->courses['updated'] .= ilObject2::_lookupTitle(ilObject2::_lookupObjId($hierarchy_id))
 				                             . ' - ' . $course->getTitle() . '<br>';
-			} else {
+			} else {    // create
 				$course->create();
 				$course->createReference();
 				$course->putInTree($hierarchy_id);
@@ -293,7 +294,7 @@ class ilCourseImportGUI {
 				}
 			}
 
-			//online
+			// online
 			if (isset($item->online)) {
 				if ((bool)$item->online->__toString() == false
 				    || strtolower($item->online->__toString()) == 'false'
@@ -306,8 +307,8 @@ class ilCourseImportGUI {
 				}
 			}
 
-			//course time range:  if there's no timeframe defined, leave the current/default timeframe,
-			//if it is defined but empty, unset the timeframe
+			// course time range:  if there's no timeframe defined, leave the current/default timeframe,
+			// if it is defined but empty, unset the timeframe
 			if ($item->courseTimeframe) {
 				if (!empty($item->courseTimeframe)) {
 					$courseTimeframe = $item->courseTimeframe;

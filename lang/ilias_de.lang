@@ -15,5 +15,6 @@ error_inscription#:#Anmeldungszeitfenster unvollständig bei Kurs: %s<br>
 error_not_category#:#Objekt mit Ref-ID '%s' ist nicht vom Typ "Kategorie" (aus Spalte 'Hierarchie' im Excel)<br>
 error_container_ref#:#Objekt mit Ref-ID '%s' ist nicht vom Typ "Container" (aus Spalte 'Kurs-Referenzen' im Excel)<br>
 error_large_file#:#Die hochgeladene Datei ist ungewöhnlich gross. Bitte überprüfen Sie, ob sich nach den gefüllte Zeilen der Excel-Datei noch leere Zeilen befinden und löschen Sie diese gegebenfalls.
+error_beginning_end#:#Der Kursbeginn muss vor dem Kursende liegen, Kurs: %s<br>
 import_succeeded#:#Kurse neu angelegt:<br>%s<br>Kurse aktualisiert:<br>%s<br>Kurs-Referenzen angelegt:<br>%s<br>Kurs-Referenzen gelöscht:<br>%s
 import_failed#:#Importieren der Kurse fehlgeschlagen. Die Validierung ergab folgende Fehlermeldungen:<br><br>
